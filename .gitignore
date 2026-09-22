@@ -38,6 +38,7 @@ AndroidProject
 *.gradle/
 *.idea/
 
+
 #self
 cpso
 cpso.sh
@@ -69,3 +70,7 @@ conansync/aar
 conansync/libs
 conansync/src
 com.xreal.xr.tar.gz
+/XREALSDKTemplate_BurstDebugInformation_DoNotShip
+/g3doc
+/AarExtract
+/ProjectSettings

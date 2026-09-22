@@ -5,9 +5,15 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/test_HandsDemoScene.unity
     guid: 9dec01bec53cf66449129f9880e56c56
+  - enabled: 1
+    path: Assets/SurgicalLivePlatform/Example/Scene/UserLogin.unity
+    guid: a3ea2b18c14b140489d3ca441dd1c685
+  - enabled: 1
+    path: Assets/SurgicalLivePlatform/Example/Scene/RoomLobbyScene.unity
+    guid: a8067e78bd9645e41b4192e2af75a428
   m_configObjects:
     com.unity.xr.arfoundation.simulation_settings: {fileID: 11400000, guid: 7ff3cc84cfbc14b428241653eda48e36, type: 2}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 3c48157b70d3a46e8a108a6c8141f177, type: 2}

@@ -2,6 +2,10 @@
 
 **【豁免条款】**：如果你识别到当前任务属于“极小规模的简单维护”（例如：改错别字、变量重命名、简单参数调整等），允许暂时不被繁琐的文档流阻塞，但你必须在执行前主动向用户提问（交由用户确认 yes or no），获得同意后方可直接修改，若回答no,则以就依旧严格地遵循本文件中的所有规则。
 
+
+
+
+
 ## 1. 核心技术栈与 Google 基建集成 (Core Tech & Infra)
 - **Core Library**: superpowers (位于第三方库 	hird_party/antigravity/superpowers/，严禁在业务代码中重新实现该库已有的底层算法或能力)。
 - **Toolchain**:
@@ -20,6 +24,7 @@
 - `g3doc/04_testing/`：TAP 测试策略、覆盖率目标。
 - `g3doc/05_operations/`：SRE 运维手册、CI/CD Presubmit 配置说明。
 - `g3doc/06_walkthrough/`：详细的功能操作指南和验收列表。
+- `g3doc/07_test/`：验收时的测试问题归档。
 *注：每次提交代码若涉及逻辑变更，必须包含同一 CL 中的对应 `g3doc` 更新。文档均用中文。*
 *注2：如果后续有需要重载、重写、修改以前的 plan 以及 walkthrough，则直接在原本的文档上进行修改，不要创建新文件。*
 

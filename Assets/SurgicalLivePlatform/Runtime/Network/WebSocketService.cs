@@ -13,7 +13,8 @@ namespace SurgicalLivePlatform.Runtime.Network
         private string _url;
         private CancellationTokenSource _cts;
 
-        private const int MAX_RETRY_COUNT = 5;
+        public int MaxRetryCount { get; set; } = 10;
+        public int MaxBackoffMs { get; set; } = 30000;
         private const int INITIAL_BACKOFF_MS = 1000;
 
         public event Action<string> OnMessageReceived;
@@ -32,7 +33,7 @@ namespace SurgicalLivePlatform.Runtime.Network
             int retryCount = 0;
             int backoffMs = INITIAL_BACKOFF_MS;
 
-            while (retryCount < MAX_RETRY_COUNT)
+            while (retryCount < MaxRetryCount)
             {
                 try
                 {
@@ -44,7 +45,7 @@ namespace SurgicalLivePlatform.Runtime.Network
                         _ws.Options.SetRequestHeader("Authorization", $"Bearer {token}");
                     }
 
-                    Debug.Log($"[WebSocketService] Connecting to {_url} (Attempt {retryCount + 1}/{MAX_RETRY_COUNT})...");
+                    Debug.Log($"[WebSocketService] Connecting to {_url} (Attempt {retryCount + 1}/{MaxRetryCount})...");
                     
                     // Bypass SSL for local development
                     System.Net.ServicePointManager.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
@@ -64,7 +65,7 @@ namespace SurgicalLivePlatform.Runtime.Network
                     Debug.LogWarning($"[WebSocketService] {errorMsg}");
                     OnError?.Invoke(errorMsg);
 
-                    if (retryCount >= MAX_RETRY_COUNT)
+                    if (retryCount >= MaxRetryCount)
                     {
                         Debug.LogError("[WebSocketService] Max retry count reached. Giving up.");
                         OnDisconnected?.Invoke("Max retry count reached");
@@ -73,7 +74,7 @@ namespace SurgicalLivePlatform.Runtime.Network
 
                     Debug.LogWarning($"[WebSocketService] Waiting {backoffMs}ms before next retry...");
                     await Task.Delay(backoffMs);
-                    backoffMs *= 2; // 指数退避
+                    backoffMs = Math.Min(backoffMs * 2, MaxBackoffMs); // 指数退避并限制最大间隔
                 }
             }
         }

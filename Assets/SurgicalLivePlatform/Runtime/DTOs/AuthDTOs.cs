@@ -67,7 +67,16 @@ namespace SurgicalLivePlatform.Runtime.DTOs
         public string id;               // 用户唯一ID
         public string username;         // 登录账号名
         public string name;             // 显示昵称/姓名
+        public string phone;       // 手机
+        public string status;             // 状态
+        public string hospital_id;       // 医院编号
+        public string department_id;             // 部门编号
         public string avatar_url;       // 头像地址
+        public string[] roles;       // 角色
+
+        public string[] permissions; //权限
+
+
         // 注意：角色与权限 (roles, permissions) 字段可在此处按需扩展
     }
 
@@ -96,6 +105,7 @@ namespace SurgicalLivePlatform.Runtime.DTOs
         public string access_token;     // 缓存的短期令牌
         public string refresh_token;    // 缓存的刷新令牌
         public long last_login_time;    // 最后登录时间的时间戳（Tick），用于列表排序
+        public UserInfo user;           // 基础用户信息
     }
 
     #endregion

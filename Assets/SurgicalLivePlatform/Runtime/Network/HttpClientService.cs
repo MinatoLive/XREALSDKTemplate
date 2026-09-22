@@ -156,7 +156,9 @@ namespace SurgicalLivePlatform.Runtime.Network
             }
 
             string responseBody = await response.Content.ReadAsStringAsync();
-            UnityEngine.Debug.Log($"[HttpClientService] [{response.RequestMessage.Method}] [{response.RequestMessage.RequestUri}] : {responseBody}");
+            string method = response.RequestMessage?.Method?.Method ?? "UNKNOWN";
+            string uri = response.RequestMessage?.RequestUri?.ToString() ?? "UNKNOWN_URI";
+            UnityEngine.Debug.Log($"[HttpClientService] [{method}] [{uri}] : {responseBody}");
             return responseBody;
         }
 
@@ -186,6 +188,7 @@ namespace SurgicalLivePlatform.Runtime.Network
         {
             string json = await PostRawAsync("/auth/login", request);
             var wrapper = JsonUtility.FromJson<AuthResponseWrapper>(json);
+            if (wrapper == null) throw new Exception("API Error: 返回的JSON数据为空或无法解析");
             if (wrapper.code != 200) throw new Exception($"API Error: {wrapper.message}");
             return wrapper.data;
         }
@@ -194,6 +197,7 @@ namespace SurgicalLivePlatform.Runtime.Network
         {
             string json = await PostRawAsync("/auth/device/login", request);
             var wrapper = JsonUtility.FromJson<AuthResponseWrapper>(json);
+            if (wrapper == null) throw new Exception("API Error: 返回的JSON数据为空或无法解析");
             if (wrapper.code != 200) throw new Exception($"API Error: {wrapper.message}");
             return wrapper.data;
         }
@@ -251,6 +255,7 @@ namespace SurgicalLivePlatform.Runtime.Network
         {
             string json = await GetRawAsync($"/rooms/{roomId}");
             var wrapper = JsonUtility.FromJson<RoomItemWrapper>(json);
+            if (wrapper == null) throw new Exception("API Error: 返回的房间详情数据为空或无法解析");
             if (wrapper.code != 200) throw new Exception($"API Error: {wrapper.message}");
             return wrapper.data;
         }
@@ -291,6 +296,7 @@ namespace SurgicalLivePlatform.Runtime.Network
         {
             string json = await PostRawAsync($"/rooms/{roomId}/join", null);
             var wrapper = JsonUtility.FromJson<JoinRoomResponseWrapper>(json);
+            if (wrapper == null) throw new Exception("API Error: 返回的入会响应数据为空或无法解析");
             if (wrapper.code != 200) throw new Exception($"API Error: {wrapper.message}");
             return wrapper.data;
         }
