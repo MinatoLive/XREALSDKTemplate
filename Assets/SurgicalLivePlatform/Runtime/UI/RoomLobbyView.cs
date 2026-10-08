@@ -15,7 +15,7 @@ namespace SurgicalLivePlatform.Runtime.UI
         [SerializeField] private GameObject roomCardPrefab;
         [SerializeField] private Button immediateLiveButton;
         [SerializeField] private Button scheduledLiveButton;
-        [SerializeField] private GameObject loadingIndicator;
+       // [SerializeField] private GameObject loadingIndicator;
         [SerializeField] private RoomModalView roomModalView;
 
         [Header("Settings")]
@@ -63,6 +63,7 @@ namespace SurgicalLivePlatform.Runtime.UI
             {
                 try
                 {
+                    if (SurgicalLiveSDK.Auth == null) return;
                     string userId = SurgicalLiveSDK.Auth.CurrentUserId;
                     if (!string.IsNullOrEmpty(userId))
                     {
@@ -123,7 +124,7 @@ namespace SurgicalLivePlatform.Runtime.UI
             hasMoreData = true;
             ClearActiveCards();
             
-            loadingIndicator.SetActive(true);
+          //  loadingIndicator.SetActive(true);
             isLoading = true;
 
             try
@@ -141,7 +142,7 @@ namespace SurgicalLivePlatform.Runtime.UI
             finally
             {
                 isLoading = false;
-                loadingIndicator.SetActive(false);
+              //  loadingIndicator.SetActive(false);
             }
         }
 
@@ -151,7 +152,7 @@ namespace SurgicalLivePlatform.Runtime.UI
 
             currentPage++;
             isLoading = true;
-            loadingIndicator.SetActive(true);
+          //  loadingIndicator.SetActive(true);
 
             try
             {
@@ -169,7 +170,7 @@ namespace SurgicalLivePlatform.Runtime.UI
             finally
             {
                 isLoading = false;
-                loadingIndicator.SetActive(false);
+             //   loadingIndicator.SetActive(false);
             }
         }
 
