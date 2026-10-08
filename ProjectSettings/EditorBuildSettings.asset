@@ -5,17 +5,27 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 0
+  - enabled: 1
     path: Assets/Scenes/test_HandsDemoScene.unity
     guid: 9dec01bec53cf66449129f9880e56c56
-  - enabled: 1
+  - enabled: 0
     path: Assets/SurgicalLivePlatform/Example/Scene/UserLogin.unity
     guid: a3ea2b18c14b140489d3ca441dd1c685
-  - enabled: 1
+  - enabled: 0
     path: Assets/SurgicalLivePlatform/Example/Scene/RoomLobbyScene.unity
     guid: a8067e78bd9645e41b4192e2af75a428
+  - enabled: 0
+    path: Assets/Samples/XR Interaction Toolkit/3.3.2/Hands Interaction Demo/HandsDemoScene.unity
+    guid: 3ff35cecbcc52cc42945cf531638a60a
+  - enabled: 0
+    path: Assets/SurgicalLivePlatform/Scenes/null.unity
+    guid: 5e27c6f2b412210419af635a8aecf1dc
+  - enabled: 0
+    path: Assets/Samples/LiveKit SDK/2.1.0/Meet/Scenes/MeetApp.unity
+    guid: 2cda990e2423bbf4892e6590ba056729
   m_configObjects:
     com.unity.xr.arfoundation.simulation_settings: {fileID: 11400000, guid: 7ff3cc84cfbc14b428241653eda48e36, type: 2}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 3c48157b70d3a46e8a108a6c8141f177, type: 2}
     com.unity.xr.management.xrealsettings: {fileID: 11400000, guid: fbd0d0525307a4de286b5b9da52d4e07, type: 2}
+    com.unity.xr.openxr.settings4: {fileID: 11400000, guid: a9c52dd4f3f20174389d646f954348d0, type: 2}
   m_UseUCBPForAssetBundles: 0

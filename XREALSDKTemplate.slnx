@@ -12,9 +12,10 @@
   <Project Path="Unity.XR.Interaction.Toolkit.Samples.Hands.Editor.csproj" />
   <Project Path="Unity.XR.Interaction.Toolkit.Samples.SpatialKeyboard.Editor.csproj" />
   <Project Path="Unity.XR.Hands.Samples.HandCapture.Editor.csproj" />
-  <Project Path="Unity.XR.Hands.Samples.Gestures.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />
+  <Project Path="Unity.XR.Hands.Samples.Gestures.csproj" />
   <Project Path="Unity.XR.Hands.Samples.Gestures.Editor.csproj" />
+  <Project Path="LiveKit.Samples.Common.csproj" />
   <Project Path="SurgicalLivePlatform.Example.Runtime.csproj" />
   <Project Path="SurgicalLivePlatform.Example.Tests.csproj" />
   <Project Path="Unity.XR.Interaction.Toolkit.Samples.StarterAssets.Editor.csproj" />

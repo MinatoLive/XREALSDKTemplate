@@ -11,6 +11,8 @@ namespace SurgicalLivePlatform.Runtime.UI
     /// </summary>
     public class RoomJoinController : MonoBehaviour
     {
+        public static event System.Action<string, string> OnRoomJoinSuccess;
+
         private static RoomJoinController _instance;
         public static RoomJoinController Instance
         {
@@ -84,30 +86,17 @@ namespace SurgicalLivePlatform.Runtime.UI
                     throw new Exception("入会申请失败，服务器返回空数据");
                 }
                 
-                // 3. 启动流媒体与信令连接
-                string wsToken = "";
-                if (!string.IsNullOrEmpty(SurgicalLiveSDK.Auth.CurrentUserId))
+                // 采用 C# 事件解耦：触发事件，让外层（如 MeetManager）自行监听，彻底避免反向引用和反射
+                if (OnRoomJoinSuccess != null)
                 {
-                    var userLocalData = await SurgicalLiveSDK.Storage.GetUserAsync(SurgicalLiveSDK.Auth.CurrentUserId);
-                    if (userLocalData != null)
-                    {
-                        wsToken = userLocalData.access_token;
-                    }
+                    OnRoomJoinSuccess.Invoke(joinResponse.livekit_url, joinResponse.livekit_token);
+                }
+                else
+                {
+                    Debug.LogWarning("[RoomJoinController] 入会申请成功，但目前没有任何对象监听 OnRoomJoinSuccess 事件！");
                 }
 
-                await RoomConnectionManager.Instance.StartConnectionAsync(
-                    roomId,
-                    joinResponse.livekit_url,
-                    joinResponse.livekit_token,
-                    wsToken
-                );
-
-                // 4. 判断状态拉取历史数据
-                if (roomDetail.status == "LIVE")
-                {
-                    Debug.Log("[RoomJoinController] 房间直播中，开始静默拉取历史记录...");
-                    _ = LoadHistoryDataQuietly(roomId);
-                }
+                return;
             }
             catch (Exception ex)
             {
