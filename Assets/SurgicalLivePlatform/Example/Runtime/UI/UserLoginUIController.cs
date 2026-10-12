@@ -3,8 +3,9 @@ using SurgicalLivePlatform.Runtime;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.UI;
 using UnityEngine.SceneManagement;
-
+using SurgicalLivePlatform.Runtime.Models;
 namespace SurgicalLivePlatform.Example.Runtime.UI
 {
     /// <summary>
@@ -171,15 +172,8 @@ namespace SurgicalLivePlatform.Example.Runtime.UI
                     Debug.Log($"[UserLogin] 已获取并储存当前用户信息: ID={userInfo.id}, Username={userInfo.username}, Name={userInfo.name}");
                 }
                 
-                // 执行页面跳转逻辑
-                if (AppFlowController.Instance != null)
-                {
-                    AppFlowController.Instance.ShowLobbyPanel();
-                }
-                else
-                {
-                    Debug.LogWarning("[UserLogin] AppFlowController.Instance 为空，无法切换到 LobbyPanel！");
-                }
+                // 切换用户状态为已登录，UI 将通过事件驱动自动响应
+                SurgicalLiveSDK.StateManager.ChangeState(UserAppState.LoggedIn);
             }
             catch (System.Exception ex)
             {

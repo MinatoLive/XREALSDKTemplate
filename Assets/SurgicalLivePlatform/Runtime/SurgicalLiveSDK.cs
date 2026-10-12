@@ -4,6 +4,7 @@ using SurgicalLivePlatform.Runtime.Auth;
 using SurgicalLivePlatform.Runtime.DTOs;
 using SurgicalLivePlatform.Runtime.Network;
 using SurgicalLivePlatform.Runtime.Storage;
+using SurgicalLivePlatform.Runtime.Services;
 
 namespace SurgicalLivePlatform.Runtime
 {
@@ -51,6 +52,11 @@ namespace SurgicalLivePlatform.Runtime
         public static IAuthService Auth { get; private set; }
 
         /// <summary>
+        /// 全局应用状态管理器，控制 UI 与应用状态的流转
+        /// </summary>
+        public static AppStateManager StateManager { get; private set; }
+
+        /// <summary>
         /// 初始化整个 SDK。在调用任何网络请求前必须先调用此方法一次。
         /// </summary>
         public static void Initialize()
@@ -61,6 +67,7 @@ namespace SurgicalLivePlatform.Runtime
             ApiClient = new HttpClientService(Events);
             Storage = new JsonLocalStorage();
             Auth = new AuthService(ApiClient, Storage, Events);
+            StateManager = new AppStateManager();
 
             _initialized = true;
             UnityEngine.Debug.Log("[SurgicalLiveSDK] 初始化完成。");

@@ -3,147 +3,399 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using TMPro;
 using SurgicalLivePlatform.Runtime.DTOs;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace SurgicalLivePlatform.Runtime.UI
 {
-    public class RoomCardItem : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
+    public class RoomCardItem : MonoBehaviour
     {
-        [SerializeField] private RawImage coverImage;
-        [SerializeField] private TMP_Text nameText;
-        [SerializeField] private TMP_Text descriptionText;
-        [SerializeField] private TMP_Text participantCountText;
+  
+        // 运行时通过 UIMark 自动收集，不再暴露于面板
+        private GameObject cover_image;
+        private GameObject id_txt;
+        private GameObject roomname_txt;
+        private GameObject display_txt;
+        private GameObject participant_txt;
+        private GameObject status;
+        private GameObject stream_type;
+        private GameObject started_at;
+        private Button Login_btn;
+
+        [Header("Global Config")]
+        [Tooltip("如果分配了此配置文件，运行后将优先加载配置文件的样式设置。")]
+        [SerializeField] private RoomCardStyleConfig styleConfig;
+
+        private RoomItem currentRoomItem;
+        public RoomItem BoundRoom => currentRoomItem;
         
-        [Header("Status")]
-        [SerializeField] private Image statusBackground;
-        [SerializeField] private TMP_Text statusText;
-        [SerializeField] private Color colorCreated = Color.gray;
-        [SerializeField] private Color colorLive = Color.green;
-        [SerializeField] private Color colorEnded = Color.black;
+        private static RoomCardItem currentSelectedCard;
 
-        [Header("Creator")]
-        [SerializeField] private RawImage creatorAvatar;
-        [SerializeField] private TMP_Text creatorNameText;
-        [SerializeField] private Texture2D defaultAvatar;
-        [SerializeField] private Texture2D defaultCoverFallback;
-
-        private RoomItem currentData;
-
-        public void BindData(RoomItem data)
+        private void Awake()
         {
-            currentData = data;
-            nameText.text = data.name;
-            descriptionText.text = data.description;
-            
-            // Description CSS equivalent text-overflow: ellipsis is handled by TMP automatically
-            // if configured in the inspector (Overflow: Ellipsis).
-
-            participantCountText.text = $"<b>🔥 {data.participant_count} 人在会</b>";
-
-            BindStatus(data.status);
-            BindCreator(data.creator);
-            LoadCoverImage(data.cover_image_url);
-        }
-
-        private void BindStatus(string status)
-        {
-            switch (status)
+            var uiNodes = new Dictionary<string, GameObject>();
+            var marks = GetComponentsInChildren<UIMark>(true);
+            foreach (var m in marks)
             {
-                case "CREATED":
-                    statusText.text = "未开始";
-                    statusBackground.color = colorCreated;
-                    break;
-                case "LIVE":
-                    statusText.text = "直播中";
-                    statusBackground.color = colorLive;
-                    break;
-                case "ENDED":
-                    statusText.text = "已结束";
-                    statusBackground.color = colorEnded;
-                    break;
+                if (!string.IsNullOrEmpty(m.markName))
+                {
+                    uiNodes[m.markName] = m.gameObject;
+                }
+            }
+
+            GameObject GetNode(string markName)
+            {
+                return uiNodes.TryGetValue(markName, out GameObject obj) ? obj : null;
+            }
+
+            cover_image = GetNode("cover_image");
+            id_txt = GetNode("id_txt");
+            display_txt = GetNode("display_txt");
+            participant_txt = GetNode("participant_txt");
+            status = GetNode("status");
+            stream_type = GetNode("stream_type");
+            started_at = GetNode("started_at");
+            roomname_txt = GetNode("NameText");
+            var loginBtnObj = GetNode("Login_btn");
+            if (loginBtnObj != null)
+            {
+                Login_btn = loginBtnObj.GetComponent<Button>();
+            }
+
+            if (Login_btn != null)
+            {
+                Login_btn.onClick.RemoveAllListeners();
+                Login_btn.onClick.AddListener(OnLoginButtonClicked);
             }
         }
 
-        private void BindCreator(RoomCreator creator)
+        private void OnDestroy()
         {
-            if (creator == null)
+            if (currentSelectedCard == this)
             {
-                creatorNameText.text = "系统发起";
-                creatorAvatar.texture = defaultAvatar;
-                return;
+                currentSelectedCard = null;
             }
+        }
 
-            creatorNameText.text = string.IsNullOrEmpty(creator.display_name) 
-                ? creator.username 
-                : creator.display_name;
+        private void OnLoginButtonClicked()
+        {
+            if (currentRoomItem == null) return;
 
-            if (string.IsNullOrEmpty(creator.avatar_url))
+            // 拦截不可进的房间（只允许 LIVE）
+            if (currentRoomItem.status != "LIVE")
             {
-                creatorAvatar.texture = defaultAvatar;
+                Debug.LogWarning($"[RoomCardItem] 房间状态为 {currentRoomItem.status}，当前不允许进入。");
             }
             else
             {
-                // In production: LoadImageAsync(creator.avatar_url, creatorAvatar, defaultAvatar);
-            }
-        }
-
-        public void UpdateCreatorInfo(UserInfo userInfo)
-        {
-            if (userInfo == null) return;
-            
-            creatorNameText.text = string.IsNullOrEmpty(userInfo.name) 
-                ? userInfo.username 
-                : userInfo.name;
-
-            if (!string.IsNullOrEmpty(userInfo.avatar_url))
-            {
-                // In production: LoadImageAsync(userInfo.avatar_url, creatorAvatar, defaultAvatar);
-            }
-        }
-
-        private void LoadCoverImage(string url)
-        {
-            if (string.IsNullOrEmpty(url))
-            {
-                coverImage.texture = defaultCoverFallback;
-                return;
-            }
-
-            // In production: LoadImageAsync(url, coverImage, defaultCoverFallback);
-        }
-
-        public void OnHoverEnter()
-        {
-            // TooltipManager.Show(currentData.description);
-        }
-        
-        public void OnHoverExit()
-        {
-            // TooltipManager.Hide();
-        }
-
-        public void OnPointerClick(PointerEventData eventData)
-        {
-            if (currentData != null)
-            {
                 if (RoomJoinController.Instance != null)
                 {
-                    RoomJoinController.Instance.JoinRoom(currentData.id);
+                    RoomJoinController.Instance.JoinRoom(currentRoomItem.id);
                 }
                 else
                 {
                     Debug.LogError("[RoomCardItem] 找不到 RoomJoinController 实例，无法发起入会请求。");
                 }
             }
+
+            // 执行单选互斥样式
+            if (currentSelectedCard != null && currentSelectedCard != this)
+            {
+                currentSelectedCard.ApplyStyle("unclick");
+            }
+            currentSelectedCard = this;
+            ApplyStyle("onclick");
         }
 
-        public void OnPointerEnter(PointerEventData eventData)
+        public async Task BindData(RoomItem roomItem, int sequenceIndex = -1)
         {
-            OnHoverEnter();
+            this.currentRoomItem = roomItem;
+            if (roomItem == null) return;
+
+            // 首先重置为未点击的基础样式，防止它覆盖下方动态计算的专属颜色和文本
+            ApplyStyle("unclick");
+
+            // 1. 序号 (顺序序号)
+            if (sequenceIndex >= 0)
+            {
+                SetText(id_txt, (sequenceIndex).ToString("00"));
+            }
+
+            // 2. 创建人名称
+            string displayName = "系统发起";
+            if (roomItem.creator != null)
+            {
+                displayName = string.IsNullOrEmpty(roomItem.creator.display_name) 
+                    ? roomItem.creator.username 
+                    : roomItem.creator.display_name;
+            }
+            SetText(display_txt, displayName);
+
+            SetText(roomname_txt, roomItem.name);
+
+            // 3. 在会人数
+            SetText(participant_txt, $"🔥 {roomItem.participant_count} 人在席");
+
+            // 4. 复合型 UI 渲染 (Status & StreamType)
+            if (status != null)
+            {
+                string statusText = roomItem.status;
+                Color statusBgColor = new Color(0.9f, 0.9f, 0.9f, 1f); // 默认浅灰底
+                Color statusTextColor = new Color(0.3f, 0.3f, 0.3f, 1f); // 默认深灰字
+
+                switch (roomItem.status)
+                {
+                    case "LIVE":
+                        statusText = "直播中";
+                        statusBgColor = new Color(0.85f, 1f, 0.85f, 1f); // 浅绿色底
+                        statusTextColor = new Color(0.1f, 0.5f, 0.1f, 1f); // 深绿色字
+                        break;
+                    case "CREATED":
+                        statusText = "预约中";
+                        statusBgColor = new Color(0.85f, 0.9f, 1f, 1f); // 浅蓝色底
+                        statusTextColor = new Color(0.1f, 0.4f, 0.8f, 1f); // 深蓝色字
+                        break;
+                    case "ENDED":
+                        statusText = "已结束";
+                        statusBgColor = new Color(0.9f, 0.9f, 0.9f, 1f); // 浅灰色底
+                        statusTextColor = new Color(0.4f, 0.4f, 0.4f, 1f); // 深灰色字
+                        break;
+                }
+
+                SetText(status, statusText);
+                SetTextColor(status, statusTextColor);
+                var statusBg = status.GetComponent<Image>();
+                if (statusBg != null)
+                {
+                    statusBg.color = statusBgColor;
+                }
+            }
+
+            if (stream_type != null)
+            {
+                // 如果后端未返回，默认做安全处理
+                string sType = string.IsNullOrEmpty(roomItem.stream_type) ? "LIVE" : roomItem.stream_type.ToUpper();
+                string stText = sType;
+                Color stBgColor = new Color(0.9f, 0.9f, 0.9f, 1f);
+                Color stTextColor = new Color(0.3f, 0.3f, 0.3f, 1f);
+
+                switch (sType)
+                {
+                    case "LIVE":
+                        stText = "实时直播 (LIVE)";
+                        // 颜色同 status 的 LIVE（浅绿色底 + 深绿色字）
+                        stBgColor = new Color(0.85f, 1f, 0.85f, 1f); 
+                        stTextColor = new Color(0.1f, 0.5f, 0.1f, 1f); 
+                        break;
+                    case "RECORD":
+                        stText = "录制推流 (RECORD)";
+                        // 颜色同 status 的 CREATED（浅蓝色底 + 深蓝色字）
+                        stBgColor = new Color(0.85f, 0.9f, 1f, 1f); 
+                        stTextColor = new Color(0.1f, 0.4f, 0.8f, 1f); 
+                        break;
+                }
+
+                SetText(stream_type, stText);
+                SetTextColor(stream_type, stTextColor);
+                var streamBg = stream_type.GetComponent<Image>();
+                if (streamBg != null)
+                {
+                    streamBg.color = stBgColor;
+                }
+            }
+
+            // 5. 开始时间格式化 (ISO 8601 -> MM/dd HH:mm)
+            if (!string.IsNullOrEmpty(roomItem.created_at) && System.DateTime.TryParse(roomItem.created_at, out System.DateTime dt))
+            {
+                SetText(started_at, dt.ToString("MM/dd HH:mm"));
+            }
+            else
+            {
+                SetText(started_at, roomItem.created_at);
+            }
+
+            // 6. 房间图片
+            if (cover_image != null && !string.IsNullOrEmpty(roomItem.cover_image_url))
+            {
+                // TODO: 待重构: 接入真实的图片异步加载逻辑
+                var rawImage = cover_image.GetComponent<RawImage>();
+                rawImage.texture = await ImageLoader.LoadImageAsync(roomItem.cover_image_url);
+            }
+
         }
 
-        public void OnPointerExit(PointerEventData eventData)
+        private void ApplyStyle(string statusName)
         {
-            OnHoverExit();
+            if (styleConfig == null || styleConfig.statusStyles == null) return;
+            
+            RoomStatusUIStyle matchedStyle = styleConfig.statusStyles.Find(x => x.status == statusName);
+            if (matchedStyle == null) matchedStyle = styleConfig.defaultStyle;
+
+            if (matchedStyle != null && matchedStyle.elementOverrides != null)
+            {
+                foreach (var config in matchedStyle.elementOverrides)
+                {
+                    Transform target = string.IsNullOrEmpty(config.targetPath) ? this.transform : transform.Find(config.targetPath);
+                    if (target == null) continue;
+
+                    if (config.modifyActive) target.gameObject.SetActive(config.isActive);
+                    
+                    if (config.modifyColor)
+                    {
+                        var graphic = target.GetComponent<Graphic>();
+                        if (graphic != null) graphic.color = config.color;
+                    }
+
+                    if (config.modifyFontSize)
+                    {
+                        var tmp = target.GetComponent<TMP_Text>();
+                        if (tmp != null) tmp.fontSize = config.fontSize;
+                        else
+                        {
+                            var txt = target.GetComponent<Text>();
+                            if (txt != null) txt.fontSize = (int)config.fontSize;
+                        }
+                    }
+
+                    if (config.modifySprite)
+                    {
+                        var img = target.GetComponent<Image>();
+                        if (img != null) img.sprite = config.sprite;
+                    }
+                }
+            }
         }
+
+        private void SetText(GameObject go, string text)
+        {
+            if (go == null) return;
+            
+            // 使用 GetComponentInChildren 可以同时兼容 Text 挂在自身或挂在子节点的情况
+            var tmp = go.GetComponentInChildren<TMP_Text>(true);
+            if (tmp != null) 
+            { 
+                tmp.text = text; 
+                return; 
+            }
+            var legacyTxt = go.GetComponentInChildren<Text>(true);
+            if (legacyTxt != null) 
+            { 
+                legacyTxt.text = text; 
+            }
+        }
+
+        private void SetTextColor(GameObject go, Color color)
+        {
+            if (go == null) return;
+            var tmp = go.GetComponentInChildren<TMP_Text>(true);
+            if (tmp != null) tmp.color = color;
+            var legacyTxt = go.GetComponentInChildren<Text>(true);
+            if (legacyTxt != null) legacyTxt.color = color;
+        }
+
+
+#if UNITY_EDITOR
+
+
+
+        [ContextMenu("将当前样式生成并直接写入配置文件 (Generate & Save to Config)")]
+        private void GenerateAndSaveToConfig()
+        {
+            if (styleConfig == null)
+            {
+                Debug.LogError("请先在 styleConfig 槽位中分配一个 RoomCardStyleConfig 配置文件！");
+                return;
+            }
+
+            UnityEditor.Undo.RecordObject(styleConfig, "Generate Style Template");
+
+            RoomStatusUIStyle newStyle = new RoomStatusUIStyle { status = "NEW_STATUS_TEMPLATE" };
+            newStyle.elementOverrides = new List<UIElementOverride>();
+
+            var graphics = GetComponentsInChildren<Graphic>(true);
+            foreach (var g in graphics)
+            {
+                UIElementOverride element = new UIElementOverride();
+                element.targetPath = GetRelativePath(g.transform);
+                element.componentName = g.gameObject.name;
+
+                element.modifyActive = true;
+                element.isActive = g.gameObject.activeSelf;
+
+                element.modifyColor = true;
+                element.color = g.color;
+
+                if (g is TMP_Text tmp)
+                {
+                    element.modifyFontSize = true;
+                    element.fontSize = tmp.fontSize;
+                }
+                else if (g is Text txt)
+                {
+                    element.modifyFontSize = true;
+                    element.fontSize = txt.fontSize;
+                }
+                else if (g is Image img)
+                {
+                    element.modifySprite = true;
+                    element.sprite = img.sprite;
+                }
+
+                newStyle.elementOverrides.Add(element);
+            }
+
+            if (styleConfig.statusStyles == null) styleConfig.statusStyles = new List<RoomStatusUIStyle>();
+            styleConfig.statusStyles.Add(newStyle);
+
+            UnityEditor.EditorUtility.SetDirty(styleConfig);
+            UnityEditor.AssetDatabase.SaveAssets();
+
+            Debug.Log($"成功遍历了 {graphics.Length} 个UI元素并将配置直接写入到持久化文件: {styleConfig.name}");
+        }
+
+        private string GetRelativePath(Transform target)
+        {
+            if (target == this.transform) return "";
+            string path = target.name;
+            Transform parent = target.parent;
+            while (parent != null && parent != this.transform)
+            {
+                path = parent.name + "/" + path;
+                parent = parent.parent;
+            }
+            return path;
+        }
+#endif
+    }
+
+    [System.Serializable]
+    public class RoomStatusUIStyle
+    {
+        [Tooltip("房间状态匹配字符串，如 LIVE, CREATED, ENDED")]
+        public string status; 
+        
+        [Tooltip("覆盖的所有UI元素配置项")]
+        public List<UIElementOverride> elementOverrides = new List<UIElementOverride>();
+    }
+
+    [System.Serializable]
+    public class UIElementOverride
+    {
+        [Tooltip("节点相对路径")]
+        public string targetPath;
+        [Tooltip("节点名称(仅用作面板展示辨别)")]
+        public string componentName;
+
+        public bool modifyActive;
+        public bool isActive;
+
+        public bool modifyColor;
+        public Color color = Color.white;
+
+        public bool modifyFontSize;
+        public float fontSize = 14f;
+
+        public bool modifySprite;
+        public Sprite sprite;
     }
 }

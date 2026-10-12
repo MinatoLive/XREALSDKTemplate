@@ -73,6 +73,7 @@ namespace SurgicalLivePlatform.Runtime.DTOs
         public string hospital_id;
         public string department_id;
         public string status;
+        public string stream_type;
         public string started_at;
         public string ended_at;
         public string created_at;

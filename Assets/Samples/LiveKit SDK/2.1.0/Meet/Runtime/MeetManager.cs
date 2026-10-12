@@ -27,7 +27,7 @@ public class MeetManager : MonoBehaviour
 
 
     [Header("Video Layout")]
-    [SerializeField] private GridLayoutGroup videoTrackParent;
+    [SerializeField] private RectTransform videoTrackParent;
     [SerializeField] private ParticipantTile participantTilePrefab;
     [SerializeField] private int frameRate = 30;
 
@@ -85,11 +85,13 @@ public class MeetManager : MonoBehaviour
     private void OnEnable()
     {
         RoomJoinController.OnRoomJoinSuccess += OnStartCall;
+        RoomJoinController.OnRoomLeave += OnEndCall;
     }
 
     private void OnDisable()
     {
         RoomJoinController.OnRoomJoinSuccess -= OnStartCall;
+        RoomJoinController.OnRoomLeave -= OnEndCall;
     }
 
     private void Start()

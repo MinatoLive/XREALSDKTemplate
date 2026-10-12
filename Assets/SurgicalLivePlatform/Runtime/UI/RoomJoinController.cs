@@ -12,6 +12,12 @@ namespace SurgicalLivePlatform.Runtime.UI
     public class RoomJoinController : MonoBehaviour
     {
         public static event System.Action<string, string> OnRoomJoinSuccess;
+        public static event System.Action OnRoomLeave;
+
+        public static void TriggerRoomLeave()
+        {
+            OnRoomLeave?.Invoke();
+        }
 
         private static RoomJoinController _instance;
         public static RoomJoinController Instance

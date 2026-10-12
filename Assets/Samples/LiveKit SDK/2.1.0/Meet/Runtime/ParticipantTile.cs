@@ -30,13 +30,32 @@ public class ParticipantTile : MonoBehaviour
     public void BindLiveSource(Texture source, int rotationDegrees = 0, bool mirror = false)
     {
         _controller?.Dispose();
-        var rect = ((RectTransform)transform).rect;
+        
+        int normalizedRotation = ((rotationDegrees % 360) + 360) % 360;
+        bool swap = normalizedRotation == 90 || normalizedRotation == 270;
+        float targetWidth = swap ? source.height : source.width;
+        float targetHeight = swap ? source.width : source.height;
+
         _controller = new ResizeTextureController(
-            source, rect.width, rect.height,
-            ResizeTextureController.CropMode.FillCrop,
+            source, targetWidth, targetHeight,
+            ResizeTextureController.CropMode.FillCrop, // Note: Since target aspect matches source, no cropping will actually occur.
             rotationDegrees, mirror);
         _showingLive = true;
         Image.texture = _controller.GetTargetTexture();
+
+        // 自动挂载并设置 AspectRatioFitter，保持原画比例，防止拉伸 (已根据要求关闭)
+        /*
+        AspectRatioFitter fitter = Image.gameObject.GetComponent<AspectRatioFitter>();
+        if (fitter == null)
+        {
+            fitter = Image.gameObject.AddComponent<AspectRatioFitter>();
+        }
+        fitter.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
+        if (targetHeight > 0)
+        {
+            fitter.aspectRatio = targetWidth / targetHeight;
+        }
+        */
     }
 
     public void SetLiveRotation(int rotationDegrees, bool mirror)
