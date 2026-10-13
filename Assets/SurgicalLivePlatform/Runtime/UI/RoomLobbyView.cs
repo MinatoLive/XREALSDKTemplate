@@ -1,13 +1,18 @@
+using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
-using SurgicalLivePlatform.Runtime;
 using SurgicalLivePlatform.Runtime.DTOs;
 
 namespace SurgicalLivePlatform.Runtime.UI
 {
-    public class RoomLobbyView : MonoBehaviour
+    /// <summary>
+    /// 手术大厅视图控制器 (MVP Dumb View)
+    /// 继承 BaseUIPanel，实现 IRoomLobbyView。
+    /// 仅负责卡片对象池渲染、滚动条监听、状态标签切换及上报用户交互事件。
+    /// 所有的网络请求、分页管理及弹窗协调均交由 LobbyPresenter 托管。
+    /// </summary>
+    public class RoomLobbyView : BaseUIPanel, IRoomLobbyView
     {
         [Header("UI References")]
         [SerializeField] private ScrollRect scrollRect;
@@ -15,48 +20,242 @@ namespace SurgicalLivePlatform.Runtime.UI
         [SerializeField] private GameObject roomCardPrefab;
         [SerializeField] private Button immediateLiveButton;
         [SerializeField] private Button scheduledLiveButton;
-       // [SerializeField] private GameObject loadingIndicator;
         [SerializeField] private RoomModalView roomModalView;
+        [SerializeField] private Button refreshButton;
 
-        [Header("Settings")]
-        [SerializeField] private float loadMoreThreshold = 0.2f; // 80% scroll (1 - 0.8)
+        [Header("Pagination (循环翻页组件)")]
+        [SerializeField] private Button prevPageButton;
+        [SerializeField] private Button nextPageButton;
+        [SerializeField] private TMPro.TMP_Text pageIndicatorText;
+        [SerializeField] private int pageSize = 8;
 
-        private List<RoomCardItem> cardPool = new List<RoomCardItem>();
-        private List<RoomCardItem> activeCards = new List<RoomCardItem>();
-
-        private int currentPage = 1;
-        private bool isLoading = false;
-        private bool hasMoreData = true;
-        private const int PAGE_SIZE = 20;
-
-        private Toggle filterAll;
-        private Toggle filterLive;
-        private Toggle filterCreated;
-        private Toggle filterEnded;
-        private string currentFilterStatus = ""; // "" 表示全部
-
-        private void OnEnable()
+        public int PageSize
         {
-            // 利用 Unity 原生的生命周期，当大厅面板被激活时，自动刷新数据
-            RefreshRooms();
+            get => pageSize;
+            set => pageSize = value;
         }
+
+        public event Action OnRefreshRequested;
+        public event Action OnPreviousPageRequested;
+        public event Action OnNextPageRequested;
+        public event Action<string> OnFilterChanged;
+        public event Action OnImmediateLiveRequested;
+        public event Action OnScheduledLiveRequested;
+#pragma warning disable CS0067
+        public event Action<string> OnJoinRoomRequested;
+#pragma warning restore CS0067
+
+        private LobbyPresenter _presenter;
+        private readonly List<RoomCardItem> cardPool = new List<RoomCardItem>(32);
+        private readonly List<RoomCardItem> activeCards = new List<RoomCardItem>(32);
+
+        private bool isLoading = false;
+        public Toggle filterAll;
+        public Toggle filterLive;
+        public Toggle filterCreated;
+        public Toggle filterEnded;
+        private string currentFilterStatus = ""; // "" 表示全部
 
         private void Start()
         {
-            scrollRect.onValueChanged.AddListener(OnScrollValueChanged);
+            InitializeView();
+        }
+
+        protected override void OnInit()
+        {
+            // 彻底禁用拖动功能：锁死 ScrollRect 纵向与横向拖动，杜绝手势滑动与位置更新抖动
+            if (scrollRect != null)
+            {
+                scrollRect.vertical = false;
+                scrollRect.horizontal = false;
+                scrollRect.movementType = ScrollRect.MovementType.Clamped;
+            }
             
             if (immediateLiveButton != null)
             {
-                immediateLiveButton.onClick.AddListener(OnImmediateLiveClicked);
+                immediateLiveButton.onClick.AddListener(() => OnImmediateLiveRequested?.Invoke());
             }
             if (scheduledLiveButton != null)
             {
-                scheduledLiveButton.onClick.AddListener(OnScheduledLiveClicked);
+                scheduledLiveButton.onClick.AddListener(() => OnScheduledLiveRequested?.Invoke());
+            }
+            if (refreshButton != null)
+            {
+                refreshButton.onClick.AddListener(() => OnRefreshRequested?.Invoke());
             }
 
             BindFilterToggles();
-            
-            CheckCreatePermission();
+            ResolvePaginationControls();
+
+            if (prevPageButton != null)
+            {
+                prevPageButton.onClick.AddListener(() => OnPreviousPageRequested?.Invoke());
+            }
+            if (nextPageButton != null)
+            {
+                nextPageButton.onClick.AddListener(() => OnNextPageRequested?.Invoke());
+            }
+
+            // 自愈关联 Presenter
+            if (_presenter == null)
+            {
+                _presenter = new LobbyPresenter(this, roomModalView);
+            }
+        }
+
+        protected override void OnShow()
+        {
+            // 严格禁止在 OnShow 隐式触发房间列表网络刷新，防止进出房间路由切换时重复调用接口
+        }
+
+        private void OnDestroy()
+        {
+            if (refreshButton != null)
+            {
+                refreshButton.onClick.RemoveAllListeners();
+            }
+            _presenter?.Dispose();
+            _presenter = null;
+        }
+
+        public void AttachPresenter(LobbyPresenter presenter)
+        {
+            _presenter?.Dispose();
+            _presenter = presenter;
+        }
+
+        #region IRoomLobbyView Implementation
+
+        public void SetRoomList(List<RoomItem> rooms, bool append)
+        {
+            if (rooms == null)
+            {
+                ClearActiveCards();
+                UpdateFilterCounts();
+                return;
+            }
+
+            if (append)
+            {
+                int startIndex = activeCards.Count;
+                for (int i = 0; i < rooms.Count; i++)
+                {
+                    var card = GetCardFromPool();
+                    _ = card.BindData(rooms[i], startIndex + i + 1);
+                    card.gameObject.SetActive(true);
+                    if (!activeCards.Contains(card)) activeCards.Add(card);
+                }
+            }
+            else
+            {
+                // 翻页切片模式：采用原地就地复用 (In-Place Diff & Reuse)，彻底消除每帧关闭/开启造成的卡片疯狂闪烁与布局抖动
+                int targetCount = rooms.Count;
+
+                // 1. 复用或创建前 targetCount 个卡片并原地更新数据
+                for (int i = 0; i < targetCount; i++)
+                {
+                    RoomCardItem card;
+                    if (i < cardPool.Count)
+                    {
+                        card = cardPool[i];
+                    }
+                    else
+                    {
+                        var newObj = Instantiate(roomCardPrefab, contentPanel);
+                        card = newObj.GetComponent<RoomCardItem>();
+                        cardPool.Add(card);
+                    }
+
+                    if (card != null)
+                    {
+                        _ = card.BindData(rooms[i], i + 1);
+                        if (!card.gameObject.activeSelf)
+                        {
+                            card.gameObject.SetActive(true);
+                        }
+                    }
+                }
+
+                // 2. 超出 targetCount 的卡片安全隐藏（保证没有旧残留卡片）
+                for (int i = targetCount; i < cardPool.Count; i++)
+                {
+                    if (cardPool[i] != null && cardPool[i].gameObject.activeSelf)
+                    {
+                        cardPool[i].gameObject.SetActive(false);
+                    }
+                }
+
+                // 3. 同步 activeCards 容器
+                activeCards.Clear();
+                for (int i = 0; i < targetCount; i++)
+                {
+                    if (cardPool[i] != null) activeCards.Add(cardPool[i]);
+                }
+            }
+
+            UpdateFilterCounts();
+        }
+
+        public void SetCanCreateRoom(bool canCreate)
+        {
+            if (immediateLiveButton != null) immediateLiveButton.gameObject.SetActive(canCreate);
+            if (scheduledLiveButton != null) scheduledLiveButton.gameObject.SetActive(canCreate);
+        }
+
+        public void SetLoading(bool loading)
+        {
+            isLoading = loading;
+        }
+
+        public void SetPaginationState(int currentPage, int totalPages, int totalItemCount)
+        {
+            if (pageIndicatorText != null)
+            {
+                if (totalItemCount == 0 || totalPages == 0)
+                {
+                    pageIndicatorText.text = "0 / 0";
+                }
+                else
+                {
+                    pageIndicatorText.text = $"{currentPage} / {totalPages}";
+                }
+            }
+
+            // 循环翻页模式下，只有在完全无数据时禁用翻页按钮
+            bool hasData = totalItemCount > 0;
+            if (prevPageButton != null) prevPageButton.interactable = hasData;
+            if (nextPageButton != null) nextPageButton.interactable = hasData;
+        }
+
+        public void ShowErrorMessage(string message)
+        {
+            Debug.LogError($"[RoomLobbyView] {message}");
+            Toast.Show(message, 2.5f);
+        }
+
+        #endregion
+
+        /// <summary>
+        /// 供外部 (如路由/刷新按钮) 触发的标准刷新接口
+        /// </summary>
+        public void RefreshRooms()
+        {
+            OnRefreshRequested?.Invoke();
+        }
+
+        public void PreviousPage()
+        {
+            OnPreviousPageRequested?.Invoke();
+        }
+
+        public void NextPage()
+        {
+            OnNextPageRequested?.Invoke();
+        }
+
+        public void LoadNextPage()
+        {
+            OnNextPageRequested?.Invoke();
         }
 
         private void BindFilterToggles()
@@ -70,7 +269,6 @@ namespace SurgicalLivePlatform.Runtime.UI
                 else if (m.markName == "Toggle_FilterEnded") filterEnded = m.GetComponent<Toggle>();
             }
 
-            // 在代码层面强制接管互斥逻辑，防止在 Unity 面板中漏配 ToggleGroup
             var toggleGroup = gameObject.GetComponent<ToggleGroup>();
             if (toggleGroup == null) toggleGroup = gameObject.AddComponent<ToggleGroup>();
             toggleGroup.allowSwitchOff = false;
@@ -85,187 +283,32 @@ namespace SurgicalLivePlatform.Runtime.UI
                 filterLive.group = toggleGroup;
                 filterLive.onValueChanged.AddListener(isOn => { if (isOn) ApplyFilter("LIVE"); });
             }
-            if (filterCreated != null)
+            if (filterCreated != null) 
             {
                 filterCreated.group = toggleGroup;
                 filterCreated.onValueChanged.AddListener(isOn => { if (isOn) ApplyFilter("CREATED"); });
             }
-            if (filterEnded != null)
+            if (filterEnded != null) 
             {
                 filterEnded.group = toggleGroup;
                 filterEnded.onValueChanged.AddListener(isOn => { if (isOn) ApplyFilter("ENDED"); });
             }
-
-            // 强制初始化时激活“全部”，其他会自动被 ToggleGroup 设为 false
-            if (filterAll != null)
-            {
-                filterAll.SetIsOnWithoutNotify(true);
-            }
-            ApplyFilter(""); // 强制触发一次全部状态
         }
 
         private void ApplyFilter(string status)
         {
             currentFilterStatus = status;
-            UpdateCardVisibility();
-        }
+            OnFilterChanged?.Invoke(status);
 
-        private void UpdateCardVisibility()
-        {
-            foreach (var card in activeCards)
+            if (_presenter == null)
             {
-                if (card.BoundRoom == null) continue;
-                bool match = string.IsNullOrEmpty(currentFilterStatus) || card.BoundRoom.status == currentFilterStatus;
-                card.gameObject.SetActive(match);
-            }
-        }
-
-        private async void CheckCreatePermission()
-        {
-            bool hasPermission = false;
-          
-            try
-            {
-                if (SurgicalLiveSDK.Auth == null) return;
-                string userId = SurgicalLiveSDK.Auth.CurrentUserId;
-                if (!string.IsNullOrEmpty(userId))
+                foreach (var card in activeCards)
                 {
-                    var userData = await SurgicalLiveSDK.Storage.GetUserAsync(userId);
-                    if (userData != null && userData.user != null && userData.user.permissions != null)
-                    {
-                        var permissions = new List<string>(userData.user.permissions);
-                        if (permissions.Contains("room.create"))
-                        {
-                            hasPermission = true;
-                        }
-                    }
+                    if (card == null || card.BoundRoom == null) continue;
+                    bool match = string.IsNullOrEmpty(currentFilterStatus) || card.BoundRoom.status == currentFilterStatus;
+                    card.gameObject.SetActive(match);
                 }
             }
-            catch (System.Exception e)
-            {
-                Debug.LogWarning($"[RoomLobbyView] Failed to check permissions: {e.Message}");
-            }
-            
-            if (immediateLiveButton != null) immediateLiveButton.gameObject.SetActive(hasPermission);
-            if (scheduledLiveButton != null) scheduledLiveButton.gameObject.SetActive(hasPermission);
-        }
-        
-        private void EnsureRoomModalView()
-        {
-            if (roomModalView == null)
-            {
-                roomModalView = Resources.FindObjectsOfTypeAll<RoomModalView>().FirstOrDefault();
-                if (roomModalView == null)
-                {
-                    Debug.LogError("[RoomLobbyView] 找不到 RoomModalView 组件！");
-                }
-            }
-        }
-
-        private void OnImmediateLiveClicked()
-        {
-            EnsureRoomModalView();
-            if (roomModalView == null) return;
-            try { roomModalView.Open(RoomCreateMode.Immediate); }
-            catch (System.Exception e) { Debug.LogError($"[RoomLobbyView] 打开立即直播面板异常: {e.Message}"); }
-        }
-
-        private void OnScheduledLiveClicked()
-        {
-            EnsureRoomModalView();
-            if (roomModalView == null) return;
-            try { roomModalView.Open(RoomCreateMode.Scheduled); }
-            catch (System.Exception e) { Debug.LogError($"[RoomLobbyView] 打开预约直播面板异常: {e.Message}"); }
-        }
-
-        public async void RefreshRooms()
-        {
-            if (isLoading) return;
-
-            currentPage = 1;
-            hasMoreData = true;
-            ClearActiveCards();
-            
-          //  loadingIndicator.SetActive(true);
-            isLoading = true;
-
-            try
-            {
-                var response = await SurgicalLiveSDK.Auth.GetRoomInfosAsync(currentPage, PAGE_SIZE, null, null, null);
-                RenderRooms(response.list);
-                
-                if (response.list.Count < PAGE_SIZE)
-                    hasMoreData = false;
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogError($"Refresh failed: {e.Message}");
-            }
-            finally
-            {
-                isLoading = false;
-              //  loadingIndicator.SetActive(false);
-            }
-        }
-
-        public async void LoadNextPage()
-        {
-            if (isLoading || !hasMoreData) return;
-
-            currentPage++;
-            isLoading = true;
-          //  loadingIndicator.SetActive(true);
-
-            try
-            {
-                var response = await SurgicalLiveSDK.Auth.GetRoomInfosAsync(currentPage, PAGE_SIZE, null, null, null);
-                RenderRooms(response.list);
-
-                if (response.list.Count < PAGE_SIZE)
-                    hasMoreData = false;
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogError($"Load next page failed: {e.Message}");
-                currentPage--; // Revert page on failure
-            }
-            finally
-            {
-                isLoading = false;
-             //   loadingIndicator.SetActive(false);
-            }
-        }
-
-        private void OnScrollValueChanged(Vector2 pos)
-        {
-            if (pos.y <= loadMoreThreshold && !isLoading && hasMoreData)
-            {
-                LoadNextPage();
-            }
-        }
-
-        private void RenderRooms(List<RoomItem> rooms)
-        {
-            if (rooms == null) return;
-            int index = 0;
-            foreach (var room in rooms)
-            {
-                index++;
-                var card = GetCardFromPool();
-                // TODO: 待重构: RoomCardItem.BindData 已被移除，后续由用户重构数据填充逻辑
-                card.BindData(room, index);
-                
-                bool match = string.IsNullOrEmpty(currentFilterStatus) || room.status == currentFilterStatus;
-                card.gameObject.SetActive(match);
-                activeCards.Add(card);
-
-                if (!string.IsNullOrEmpty(room.creator_id))
-                {
-                    FetchAndUpdateCreatorInfo(card, room.creator_id);
-                }
-            }
-            
-            UpdateFilterCounts();
         }
 
         private void UpdateFilterCounts()
@@ -275,15 +318,32 @@ namespace SurgicalLivePlatform.Runtime.UI
             int endedCount = 0;
             int allCount = 0;
 
-            foreach (var card in activeCards)
+            if (_presenter != null && _presenter.CachedRooms != null && _presenter.CachedRooms.Count > 0)
             {
-                if (card.BoundRoom == null) continue;
-                allCount++;
-                switch (card.BoundRoom.status)
+                foreach (var room in _presenter.CachedRooms)
                 {
-                    case "LIVE": liveCount++; break;
-                    case "CREATED": createdCount++; break;
-                    case "ENDED": endedCount++; break;
+                    if (room == null) continue;
+                    allCount++;
+                    switch (room.status)
+                    {
+                        case "LIVE": liveCount++; break;
+                        case "CREATED": createdCount++; break;
+                        case "ENDED": endedCount++; break;
+                    }
+                }
+            }
+            else
+            {
+                foreach (var card in activeCards)
+                {
+                    if (card == null || card.BoundRoom == null) continue;
+                    allCount++;
+                    switch (card.BoundRoom.status)
+                    {
+                        case "LIVE": liveCount++; break;
+                        case "CREATED": createdCount++; break;
+                        case "ENDED": endedCount++; break;
+                    }
                 }
             }
 
@@ -291,6 +351,199 @@ namespace SurgicalLivePlatform.Runtime.UI
             SetToggleText(filterLive, $"直播中 ({liveCount})");
             SetToggleText(filterCreated, $"已预约 ({createdCount})");
             SetToggleText(filterEnded, $"已结束 ({endedCount})");
+        }
+
+        private void ResolvePaginationControls()
+        {
+            if (prevPageButton == null || nextPageButton == null || pageIndicatorText == null)
+            {
+                var marks = GetComponentsInChildren<UIMark>(true);
+                foreach (var m in marks)
+                {
+                    if (prevPageButton == null && (m.markName == "Btn_PrevPage" || m.markName == "Btn_LobbyPrev"))
+                    {
+                        prevPageButton = m.GetComponent<Button>();
+                    }
+                    else if (nextPageButton == null && (m.markName == "Btn_NextPage" || m.markName == "Btn_LobbyNext"))
+                    {
+                        nextPageButton = m.GetComponent<Button>();
+                    }
+                    else if (pageIndicatorText == null && (m.markName == "Text_PageIndicator" || m.markName == "Text_LobbyPage"))
+                    {
+                        pageIndicatorText = m.GetComponent<TMPro.TMP_Text>();
+                    }
+                    else if (refreshButton == null && (m.markName == "Btn_LobbyRefresh" || m.markName == "Btn_Refresh"))
+                    {
+                        refreshButton = m.GetComponent<Button>();
+                        if (refreshButton != null)
+                        {
+                            refreshButton.onClick.AddListener(() => OnRefreshRequested?.Invoke());
+                        }
+                    }
+                }
+            }
+
+            // 若场景 Hierarchy 中尚未预制左右翻页组件，则在当前大厅底部全自动动态生成高品质翻页栏
+            if (prevPageButton == null || nextPageButton == null)
+            {
+                CreateDefaultPaginationBar();
+            }
+        }
+        [ContextMenu("生成")]
+        private void CreateDefaultPaginationBar()
+        {
+            Transform existingBar = transform.Find("PaginationBar");
+            GameObject barObj;
+            if (existingBar != null)
+            {
+                barObj = existingBar.gameObject;
+            }
+            else
+            {
+                barObj = new GameObject("PaginationBar", typeof(RectTransform), typeof(Image), typeof(HorizontalLayoutGroup));
+                barObj.transform.SetParent(this.transform, false);
+            }
+
+            var barRect = barObj.GetComponent<RectTransform>();
+            barRect.anchorMin = new Vector2(0.5f, 0f);
+            barRect.anchorMax = new Vector2(0.5f, 0f);
+            barRect.pivot = new Vector2(0.5f, 0.5f);
+            barRect.anchoredPosition = new Vector2(0f, 36f);
+            barRect.sizeDelta = new Vector2(380f, 50f);
+
+            var barImg = barObj.GetComponent<Image>();
+            barImg.color = new Color(0.12f, 0.16f, 0.24f, 0.88f);
+            barImg.raycastTarget = false;
+
+            var layout = barObj.GetComponent<HorizontalLayoutGroup>();
+            layout.childAlignment = TextAnchor.MiddleCenter;
+            layout.spacing = 16f;
+            layout.childControlWidth = false;
+            layout.childControlHeight = false;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = false;
+
+            var msyhFont = Resources.Load<TMPro.TMP_FontAsset>("Fonts & Materials/MSYH SDF");
+
+            // 1. 左翻页按钮 (◀ 上一页)
+            if (prevPageButton == null)
+            {
+                var btnObj = new GameObject("Btn_PrevPage", typeof(RectTransform), typeof(Image), typeof(Button), typeof(UIMark));
+                btnObj.transform.SetParent(barObj.transform, false);
+                var btnRect = btnObj.GetComponent<RectTransform>();
+                btnRect.sizeDelta = new Vector2(106f, 38f);
+
+                var img = btnObj.GetComponent<Image>();
+                img.color = new Color(0.2f, 0.26f, 0.38f, 0.95f);
+                img.raycastTarget = true;
+
+                var btn = btnObj.GetComponent<Button>();
+                btn.targetGraphic = img;
+                var colors = btn.colors;
+                colors.normalColor = new Color(0.2f, 0.26f, 0.38f, 0.95f);
+                colors.highlightedColor = new Color(0.28f, 0.4f, 0.6f, 1f);
+                colors.pressedColor = new Color(0.14f, 0.18f, 0.26f, 1f);
+                colors.selectedColor = new Color(0.24f, 0.32f, 0.46f, 1f);
+                colors.disabledColor = new Color(0.12f, 0.15f, 0.2f, 0.4f);
+                btn.colors = colors;
+
+                btnObj.GetComponent<UIMark>().markName = "Btn_PrevPage";
+
+                var textObj = new GameObject("Text", typeof(RectTransform), typeof(TMPro.TextMeshProUGUI));
+                textObj.transform.SetParent(btnObj.transform, false);
+                var textRect = textObj.GetComponent<RectTransform>();
+                textRect.anchorMin = Vector2.zero;
+                textRect.anchorMax = Vector2.one;
+                textRect.sizeDelta = Vector2.zero;
+                var tmp = textObj.GetComponent<TMPro.TextMeshProUGUI>();
+                if (msyhFont != null) tmp.font = msyhFont;
+                tmp.text = "◀ 上一页";
+                tmp.fontSize = 15;
+                tmp.fontStyle = TMPro.FontStyles.Bold;
+                tmp.alignment = TMPro.TextAlignmentOptions.Center;
+                tmp.color = Color.white;
+                tmp.raycastTarget = false;
+
+                prevPageButton = btn;
+            }
+
+            // 2. 中间页码指示器 (1 / 1)
+            if (pageIndicatorText == null)
+            {
+                var indObj = new GameObject("Text_PageIndicator", typeof(RectTransform), typeof(TMPro.TextMeshProUGUI), typeof(UIMark));
+                indObj.transform.SetParent(barObj.transform, false);
+                var indRect = indObj.GetComponent<RectTransform>();
+                indRect.sizeDelta = new Vector2(90f, 38f);
+
+                var tmp = indObj.GetComponent<TMPro.TextMeshProUGUI>();
+                if (msyhFont != null) tmp.font = msyhFont;
+                tmp.text = "1 / 1";
+                tmp.fontSize = 16;
+                tmp.fontStyle = TMPro.FontStyles.Bold;
+                tmp.alignment = TMPro.TextAlignmentOptions.Center;
+                tmp.color = new Color(0.9f, 0.94f, 1f, 0.95f);
+                tmp.raycastTarget = false;
+
+                indObj.GetComponent<UIMark>().markName = "Text_PageIndicator";
+                pageIndicatorText = tmp;
+            }
+
+            // 3. 右翻页按钮 (下一页 ▶)
+            if (nextPageButton == null)
+            {
+                var btnObj = new GameObject("Btn_NextPage", typeof(RectTransform), typeof(Image), typeof(Button), typeof(UIMark));
+                btnObj.transform.SetParent(barObj.transform, false);
+                var btnRect = btnObj.GetComponent<RectTransform>();
+                btnRect.sizeDelta = new Vector2(106f, 38f);
+
+                var img = btnObj.GetComponent<Image>();
+                img.color = new Color(0.2f, 0.26f, 0.38f, 0.95f);
+                img.raycastTarget = true;
+
+                var btn = btnObj.GetComponent<Button>();
+                btn.targetGraphic = img;
+                var colors = btn.colors;
+                colors.normalColor = new Color(0.2f, 0.26f, 0.38f, 0.95f);
+                colors.highlightedColor = new Color(0.28f, 0.4f, 0.6f, 1f);
+                colors.pressedColor = new Color(0.14f, 0.18f, 0.26f, 1f);
+                colors.selectedColor = new Color(0.24f, 0.32f, 0.46f, 1f);
+                colors.disabledColor = new Color(0.12f, 0.15f, 0.2f, 0.4f);
+                btn.colors = colors;
+
+                btnObj.GetComponent<UIMark>().markName = "Btn_NextPage";
+
+                var textObj = new GameObject("Text", typeof(RectTransform), typeof(TMPro.TextMeshProUGUI));
+                textObj.transform.SetParent(btnObj.transform, false);
+                var textRect = textObj.GetComponent<RectTransform>();
+                textRect.anchorMin = Vector2.zero;
+                textRect.anchorMax = Vector2.one;
+                textRect.sizeDelta = Vector2.zero;
+                var tmp = textObj.GetComponent<TMPro.TextMeshProUGUI>();
+                if (msyhFont != null) tmp.font = msyhFont;
+                tmp.text = "下一页 ▶";
+                tmp.fontSize = 15;
+                tmp.fontStyle = TMPro.FontStyles.Bold;
+                tmp.alignment = TMPro.TextAlignmentOptions.Center;
+                tmp.color = Color.white;
+                tmp.raycastTarget = false;
+
+                nextPageButton = btn;
+            }
+
+            // 4. 调整 ScrollView 下边距并锁死拖拽，预留底部空间给翻页工具栏
+            if (scrollRect != null)
+            {
+                scrollRect.vertical = false;
+                scrollRect.horizontal = false;
+                scrollRect.movementType = ScrollRect.MovementType.Clamped;
+
+                var scrollTransform = scrollRect.GetComponent<RectTransform>();
+                if (scrollTransform != null && scrollTransform.sizeDelta.y > -120f)
+                {
+                    scrollTransform.sizeDelta = new Vector2(scrollTransform.sizeDelta.x, -140f);
+                    scrollTransform.anchoredPosition = new Vector2(scrollTransform.anchoredPosition.x, -10f);
+                }
+            }
         }
 
         private void SetToggleText(Toggle toggle, string text)
@@ -309,32 +562,12 @@ namespace SurgicalLivePlatform.Runtime.UI
             }
         }
 
-        private async void FetchAndUpdateCreatorInfo(RoomCardItem card, string creatorId)
-        {
-           // Debug.Log($"[FetchAndUpdateCreatorInfo] Calling GetUserByIdAsync for creatorId: {creatorId}");
-            try
-            {
-                var creatorInfo = await SurgicalLiveSDK.Auth.GetUserByIdAsync(creatorId);
-                if (creatorInfo != null)
-                {
-                    Debug.Log($"[Room Creator Info] ID: {creatorInfo.id}, Name: {creatorInfo.name}, Username: {creatorInfo.username}, Phone: {creatorInfo.phone}, Hospital ID: {creatorInfo.hospital_id}, Department ID: {creatorInfo.department_id}");
-                    // TODO: 待重构: RoomCardItem.UpdateCreatorInfo 已被移除，后续由用户重构创建者信息更新逻辑
-                    // card.UpdateCreatorInfo(creatorInfo);
-                }
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogWarning($"Failed to fetch creator info for {creatorId}: {e.Message}");
-            }
-        }
-
         private RoomCardItem GetCardFromPool()
         {
             foreach (var card in cardPool)
             {
-                if (!card.gameObject.activeSelf)
+                if (card != null && !card.gameObject.activeSelf)
                 {
-                    card.transform.SetAsLastSibling();
                     return card;
                 }
             }
@@ -349,7 +582,7 @@ namespace SurgicalLivePlatform.Runtime.UI
         {
             foreach (var card in activeCards)
             {
-                card.gameObject.SetActive(false);
+                if (card != null) card.gameObject.SetActive(false);
             }
             activeCards.Clear();
         }

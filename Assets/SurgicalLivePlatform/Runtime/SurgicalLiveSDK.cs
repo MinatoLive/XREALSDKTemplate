@@ -57,6 +57,17 @@ namespace SurgicalLivePlatform.Runtime
         public static AppStateManager StateManager { get; private set; }
 
         /// <summary>
+        /// 检查并保证 SDK 已初始化完成
+        /// </summary>
+        public static void EnsureInitialized()
+        {
+            if (!_initialized)
+            {
+                Initialize();
+            }
+        }
+
+        /// <summary>
         /// 初始化整个 SDK。在调用任何网络请求前必须先调用此方法一次。
         /// </summary>
         public static void Initialize()
@@ -69,8 +80,19 @@ namespace SurgicalLivePlatform.Runtime
             Auth = new AuthService(ApiClient, Storage, Events);
             StateManager = new AppStateManager();
 
+            Events.OnAuthExpired += OnHandleAuthExpired;
+
             _initialized = true;
             UnityEngine.Debug.Log("[SurgicalLiveSDK] 初始化完成。");
+        }
+
+        private static void OnHandleAuthExpired()
+        {
+            if (StateManager != null && StateManager.CurrentState != Models.UserAppState.LoggedOut)
+            {
+                UnityEngine.Debug.LogWarning("[SurgicalLiveSDK] 接收到 OnAuthExpired，自动重置状态为 LoggedOut。");
+                StateManager.ChangeState(Models.UserAppState.LoggedOut);
+            }
         }
         
         /// <summary>
@@ -79,6 +101,11 @@ namespace SurgicalLivePlatform.Runtime
         public static void Dispose()
         {
             if (!_initialized) return;
+
+            if (Events != null)
+            {
+                Events.OnAuthExpired -= OnHandleAuthExpired;
+            }
             
             if (ApiClient is System.IDisposable disposableClient)
             {

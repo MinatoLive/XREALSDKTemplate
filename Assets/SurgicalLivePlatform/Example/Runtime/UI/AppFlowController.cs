@@ -1,9 +1,9 @@
-using UnityEngine;
-using UnityEngine.UI;
 using System.Collections.Generic;
-using SurgicalLivePlatform.Runtime.UI;
 using SurgicalLivePlatform.Runtime;
 using SurgicalLivePlatform.Runtime.Models;
+using SurgicalLivePlatform.Runtime.UI;
+using UnityEngine;
+using UnityEngine.UI;
 
 namespace SurgicalLivePlatform.Example.Runtime.UI
 {
@@ -14,23 +14,83 @@ namespace SurgicalLivePlatform.Example.Runtime.UI
         InRoom
     }
 
+    /// <summary>
+    /// 应用流与 UI 状态路由器 (UI Navigation Router)
+    /// 遵循 MVP 架构规范与 UILayerManager 层级标准。
+    /// 负责强类型组装各 Presenter、维护应用级全局状态机及路由守卫。
+    /// </summary>
     public class AppFlowController : MonoBehaviour
     {
         public static AppFlowController Instance { get; private set; }
 
-        private Dictionary<string, GameObject> _uiNodes = new Dictionary<string, GameObject>();
-        private Dictionary<string, Button> _uiButtons = new Dictionary<string, Button>();
+        public AppUIState CurrentState => _currentState;
 
-        private AppUIState _currentState;
+        public const string MARK_LOGIN_PANEL = "Panel_Login";
+        public const string MARK_LOBBY_PANEL = "Panel_Lobby";
+        public const string MARK_ROOM_PANEL = "Panel_Room";
+        public const string MARK_LOBBY_BACK = "Btn_LobbyBack";
+        public const string MARK_LOBBY_REFRESH = "Btn_LobbyRefresh";
+        public const string MARK_ROOM_BACK = "Btn_RoomBack";
 
-        // 约定的 UI Mark 名称
-        private const string MARK_LOGIN_PANEL = "Panel_Login";
-        private const string MARK_LOBBY_PANEL = "Panel_Lobby";
-        private const string MARK_ROOM_PANEL = "Panel_Room";
-        
-        private const string MARK_LOBBY_BACK = "Btn_LobbyBack";
-        private const string MARK_LOBBY_REFRESH = "Btn_LobbyRefresh";
-        private const string MARK_ROOM_BACK = "Btn_RoomBack";
+        [Header("Views (强类型注入)")]
+        [SerializeField] private UserLoginUIController loginView;
+        [SerializeField] private RoomLobbyView lobbyView;
+        [SerializeField] private RoomModalView roomModalView;
+        [SerializeField] private GameObject roomPanel;
+
+        [Header("3D Root Entities (空间实体根对象显隐)")]
+        [SerializeField] private GameObject loginRoot;
+        [SerializeField] private GameObject roomListRoot;
+        [SerializeField] private GameObject roomRoot;
+
+        [Header("Action Controls (可选按键直接绑定)")]
+        [SerializeField] private Button lobbyBackButton;
+        [SerializeField] private Button lobbyRefreshButton;
+        [SerializeField] private Button roomBackButton;
+
+        public GameObject LoginRoot => loginRoot;
+        public GameObject RoomListRoot => roomListRoot;
+        public GameObject RoomRoot => roomRoot;
+
+#if UNITY_INCLUDE_TESTS || UNITY_EDITOR
+        public void ConfigureRootEntitiesForTesting(GameObject login, GameObject roomList, GameObject room)
+        {
+            loginRoot = login;
+            roomListRoot = roomList;
+            roomRoot = room;
+        }
+
+        public void ConfigurePresentersForTesting(LobbyPresenter lobbyPresenter, RoomLobbyView lobbyView = null)
+        {
+            _lobbyPresenter = lobbyPresenter;
+            this.lobbyView = lobbyView;
+        }
+
+        public void SimulateSDKStateChanged(UserAppState oldState, UserAppState newState)
+        {
+            HandleSDKStateChanged(oldState, newState);
+        }
+
+        public void SimulateLobbyRefreshClick()
+        {
+            OnLobbyRefreshClicked();
+        }
+#endif
+
+        private LoginPresenter _loginPresenter;
+        private LobbyPresenter _lobbyPresenter;
+        private RoomModalPresenter _roomModalPresenter;
+
+        private AppUIState _currentState = AppUIState.Login;
+
+        // 声明式定义：底层 SDK 核心业务状态 -> 前端 UI 界面状态
+        private static readonly Dictionary<UserAppState, AppUIState> s_sdkToUIStateMap = new Dictionary<UserAppState, AppUIState>
+        {
+            { UserAppState.Init,      AppUIState.Login },
+            { UserAppState.LoggedOut, AppUIState.Login },
+            { UserAppState.Error,     AppUIState.Login },
+            { UserAppState.LoggedIn,  AppUIState.Lobby }
+        };
 
         private void Awake()
         {
@@ -40,20 +100,36 @@ namespace SurgicalLivePlatform.Example.Runtime.UI
                 return;
             }
             Instance = this;
-            
-            FindAllUIMarks();
+
+            // 提前初始化底层核心 SDK
+            SurgicalLiveSDK.EnsureInitialized();
+
+            ResolveViews();
+            AssemblePresenters();
+            BindControlButtons();
+
+            // 初始路由守卫
+            EnforceInitialRouteGuard();
         }
 
         private void Start()
         {
-            SurgicalLiveSDK.Initialize();
-            SurgicalLiveSDK.StateManager.OnStateChanged += HandleSDKStateChanged;
+            SurgicalLiveSDK.EnsureInitialized();
+            if (SurgicalLiveSDK.StateManager != null)
+            {
+                SurgicalLiveSDK.StateManager.OnStateChanged += HandleSDKStateChanged;
+            }
+            if (SurgicalLiveSDK.Events != null)
+            {
+                SurgicalLiveSDK.Events.OnAuthExpired += HandleAuthExpired;
+            }
             RoomJoinController.OnRoomJoinSuccess += HandleRoomJoinSuccess;
 
-            BindEvents();
-
             // 初始状态检查
-            HandleSDKStateChanged(UserAppState.Init, SurgicalLiveSDK.StateManager.CurrentState);
+            if (SurgicalLiveSDK.StateManager != null)
+            {
+                HandleSDKStateChanged(UserAppState.Init, SurgicalLiveSDK.StateManager.CurrentState);
+            }
         }
 
         private void OnDestroy()
@@ -62,8 +138,252 @@ namespace SurgicalLivePlatform.Example.Runtime.UI
             {
                 SurgicalLiveSDK.StateManager.OnStateChanged -= HandleSDKStateChanged;
             }
+            if (SurgicalLiveSDK.Events != null)
+            {
+                SurgicalLiveSDK.Events.OnAuthExpired -= HandleAuthExpired;
+            }
             RoomJoinController.OnRoomJoinSuccess -= HandleRoomJoinSuccess;
-            UnbindEvents();
+
+            UnbindControlButtons();
+
+            _loginPresenter?.Dispose();
+            _lobbyPresenter?.Dispose();
+            _roomModalPresenter?.Dispose();
+            _loginPresenter = null;
+            _lobbyPresenter = null;
+            _roomModalPresenter = null;
+        }
+
+        private void ResolveViews()
+        {
+            if (loginView == null)
+            {
+                loginView = FindFirstObjectByType<UserLoginUIController>(FindObjectsInactive.Include);
+            }
+            if (lobbyView == null)
+            {
+                lobbyView = FindFirstObjectByType<RoomLobbyView>(FindObjectsInactive.Include);
+            }
+            if (roomModalView == null)
+            {
+                roomModalView = FindFirstObjectByType<RoomModalView>(FindObjectsInactive.Include);
+            }
+
+            if (roomPanel == null)
+            {
+                // 查找包含 Room 关键字或标记的节点
+                var marks = FindObjectsByType<UIMark>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+                foreach (var mark in marks)
+                {
+                    if (mark.markName == "Panel_Room")
+                    {
+                        roomPanel = mark.gameObject;
+                        break;
+                    }
+                }
+            }
+
+            // 兜底按钮查找
+            if (lobbyBackButton == null || lobbyRefreshButton == null || roomBackButton == null)
+            {
+                var marks = FindObjectsByType<UIMark>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+                foreach (var mark in marks)
+                {
+                    if (lobbyBackButton == null && mark.markName == "Btn_LobbyBack")
+                    {
+                        lobbyBackButton = mark.GetComponent<Button>();
+                    }
+                    else if (lobbyRefreshButton == null && mark.markName == "Btn_LobbyRefresh")
+                    {
+                        lobbyRefreshButton = mark.GetComponent<Button>();
+                    }
+                    else if (roomBackButton == null && mark.markName == "Btn_RoomBack")
+                    {
+                        roomBackButton = mark.GetComponent<Button>();
+                    }
+                }
+            }
+
+            ResolveRootEntities();
+        }
+
+        private void ResolveRootEntities()
+        {
+            if (loginRoot == null)
+            {
+                if (loginView != null)
+                {
+                    loginRoot = FindRootNamed(loginView.transform, "Login");
+                }
+                if (loginRoot == null)
+                {
+                    loginRoot = GameObject.Find("Login");
+                }
+                if (loginRoot == null)
+                {
+                    var activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+                    if (activeScene.isLoaded)
+                    {
+                        var allRoots = activeScene.GetRootGameObjects();
+                        foreach (var root in allRoots)
+                        {
+                            if (root.name == "Login") { loginRoot = root; break; }
+                        }
+                    }
+                }
+            }
+
+            if (roomListRoot == null)
+            {
+                if (lobbyView != null)
+                {
+                    roomListRoot = FindRootNamed(lobbyView.transform, "RoomList");
+                }
+                if (roomListRoot == null)
+                {
+                    roomListRoot = GameObject.Find("RoomList");
+                }
+                if (roomListRoot == null)
+                {
+                    var activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+                    if (activeScene.isLoaded)
+                    {
+                        var allRoots = activeScene.GetRootGameObjects();
+                        foreach (var root in allRoots)
+                        {
+                            if (root.name == "RoomList") { roomListRoot = root; break; }
+                        }
+                    }
+                }
+            }
+
+            if (roomRoot == null)
+            {
+                if (roomPanel != null)
+                {
+                    roomRoot = FindRootNamed(roomPanel.transform, "Room");
+                }
+                if (roomRoot == null)
+                {
+                    roomRoot = GameObject.Find("Room");
+                }
+                if (roomRoot == null)
+                {
+                    var activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+                    if (activeScene.isLoaded)
+                    {
+                        var allRoots = activeScene.GetRootGameObjects();
+                        foreach (var root in allRoots)
+                        {
+                            if (root.name == "Room") { roomRoot = root; break; }
+                        }
+                    }
+                }
+            }
+        }
+
+        private GameObject FindRootNamed(Transform current, string targetName)
+        {
+            var curr = current;
+            while (curr != null)
+            {
+                if (curr.name == targetName) return curr.gameObject;
+                curr = curr.parent;
+            }
+            return null;
+        }
+
+        private void AssemblePresenters()
+        {
+            if (loginView != null)
+            {
+                _loginPresenter = new LoginPresenter(loginView);
+                loginView.AttachPresenter(_loginPresenter);
+            }
+
+            if (lobbyView != null)
+            {
+                _lobbyPresenter = new LobbyPresenter(lobbyView, roomModalView);
+                lobbyView.AttachPresenter(_lobbyPresenter);
+            }
+
+            if (roomModalView != null)
+            {
+                _roomModalPresenter = new RoomModalPresenter(roomModalView);
+                roomModalView.AttachPresenter(_roomModalPresenter);
+            }
+        }
+
+        private void BindControlButtons()
+        {
+            if (lobbyBackButton != null)
+            {
+                lobbyBackButton.onClick.AddListener(OnLobbyBackClicked);
+            }
+            if (lobbyRefreshButton != null)
+            {
+                lobbyRefreshButton.onClick.AddListener(OnLobbyRefreshClicked);
+            }
+            if (roomBackButton != null)
+            {
+                roomBackButton.onClick.AddListener(OnRoomBackClicked);
+            }
+        }
+
+        private void UnbindControlButtons()
+        {
+            if (lobbyBackButton != null)
+            {
+                lobbyBackButton.onClick.RemoveListener(OnLobbyBackClicked);
+            }
+            if (lobbyRefreshButton != null)
+            {
+                lobbyRefreshButton.onClick.RemoveListener(OnLobbyRefreshClicked);
+            }
+            if (roomBackButton != null)
+            {
+                roomBackButton.onClick.RemoveListener(OnRoomBackClicked);
+            }
+        }
+
+        private void EnforceInitialRouteGuard()
+        {
+            SwitchTo(AppUIState.Login);
+        }
+
+        /// <summary>
+        /// 彻底断开流媒体 (LiveKit) 与信令服务 (WebSocket) 连接
+        /// </summary>
+        public void DisconnectLiveKitAndSignaling()
+        {
+            try
+            {
+                if (SurgicalLivePlatform.Runtime.Services.RoomConnectionManager.Instance != null)
+                {
+                    SurgicalLivePlatform.Runtime.Services.RoomConnectionManager.Instance.DisconnectAll();
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning($"[AppFlowController] 断开信令服务时异常: {ex.Message}");
+            }
+
+            try
+            {
+                // 触发事件通知底层 MeetManager 断开并清理 LiveKit 房间连接与音视频 Track 资源
+                RoomJoinController.TriggerRoomLeave();
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning($"[AppFlowController] 触发 LiveKit 离会断开时异常: {ex.Message}");
+            }
+        }
+
+        private void HandleAuthExpired()
+        {
+            Debug.LogWarning("[AppFlowController] 接收到 OnAuthExpired 事件，断开流媒体并重定向至登录界面。");
+            DisconnectLiveKitAndSignaling();
+            GoToLogin();
         }
 
         private void HandleRoomJoinSuccess(string url, string token)
@@ -71,126 +391,113 @@ namespace SurgicalLivePlatform.Example.Runtime.UI
             JoinRoom();
         }
 
-        /// <summary>
-        /// 动态收集场景中所有挂载了 UIMark 的节点
-        /// </summary>
-        private void FindAllUIMarks()
+        private void HandleSDKStateChanged(UserAppState oldState, UserAppState newState)
         {
-            _uiNodes.Clear();
-            _uiButtons.Clear();
-
-            // 查找场景中所有的 UIMark，包括未激活的对象
-            UIMark[] marks = FindObjectsByType<UIMark>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            foreach (var mark in marks)
+            if (s_sdkToUIStateMap.TryGetValue(newState, out var targetUIState))
             {
-                if (string.IsNullOrEmpty(mark.markName)) continue;
+                SwitchTo(targetUIState);
+            }
 
-                _uiNodes[mark.markName] = mark.gameObject;
-
-                Button btn = mark.GetComponent<Button>();
-                if (btn != null)
+            // 仅在用户登录成功后自动执行一次房间列表全量刷新
+            if (newState == UserAppState.LoggedIn && oldState != UserAppState.LoggedIn)
+            {
+                if (_lobbyPresenter != null)
                 {
-                    _uiButtons[mark.markName] = btn;
+                    _lobbyPresenter.RefreshRoomsAsync();
+                }
+                else if (lobbyView != null)
+                {
+                    lobbyView.RefreshRooms();
+                }
+            }
+        }
+
+        /// <summary>
+        /// 声明式统一状态路由核心切换方法
+        /// </summary>
+        public void SwitchTo(AppUIState targetState)
+        {
+            // 路由守卫：只有已登录状态才允许进入大厅或房间
+            if (targetState != AppUIState.Login)
+            {
+                if (SurgicalLiveSDK.StateManager == null || SurgicalLiveSDK.StateManager.CurrentState != UserAppState.LoggedIn)
+                {
+                    Debug.LogWarning($"[AppFlowController] 路由守卫拦截：未登录尝试跳转至 {targetState} 状态！重定向至登录界面。");
+                    targetState = AppUIState.Login;
                 }
             }
 
-            // 输出日志，方便排查由于拼写错误导致的查找失败
-            LogMissingNode(MARK_LOGIN_PANEL);
-            LogMissingNode(MARK_LOBBY_PANEL);
-            LogMissingNode(MARK_ROOM_PANEL);
-            LogMissingNode(MARK_LOBBY_BACK);
-            LogMissingNode(MARK_LOBBY_REFRESH);
-            LogMissingNode(MARK_ROOM_BACK);
-        }
+            // 无论从何处返回登录，必须彻底断开 LiveKit 与信令服务
+            if (targetState == AppUIState.Login)
+            {
+                DisconnectLiveKitAndSignaling();
+            }
 
-        private void LogMissingNode(string markName)
-        {
-            if (!_uiNodes.ContainsKey(markName))
-            {
-                Debug.LogWarning($"[AppFlowController] 场景中未找到 markName 为 '{markName}' 的 UIMark 节点！如果不需要请忽略。");
-            }
-        }
+            _currentState = targetState;
 
-        private void BindEvents()
-        {
-            if (_uiButtons.TryGetValue(MARK_LOBBY_BACK, out Button lobbyBack))
+            // 切换页面时，关闭所有残留的模态弹窗
+            if (UILayerManager.Instance != null && targetState != AppUIState.InRoom)
             {
-                lobbyBack.onClick.AddListener(OnLobbyBackClicked);
+                UILayerManager.Instance.CloseAllModals();
             }
-            if (_uiButtons.TryGetValue(MARK_LOBBY_REFRESH, out Button lobbyRefresh))
-            {
-                lobbyRefresh.onClick.AddListener(OnLobbyRefreshClicked);
-            }
-            if (_uiButtons.TryGetValue(MARK_ROOM_BACK, out Button roomBack))
-            {
-                roomBack.onClick.AddListener(OnRoomBackClicked);
-            }
-        }
 
-        private void UnbindEvents()
-        {
-            if (_uiButtons.TryGetValue(MARK_LOBBY_BACK, out Button lobbyBack) && lobbyBack != null)
+            // 1. 3D 实体根对象显隐控制 (整机激活/失活)
+            // - 默认进入 Login：只显示 loginRoot
+            // - 登录成功 Lobby：loginRoot 隐藏，roomListRoot 显示，roomRoot 隐藏
+            // - 进入房间 InRoom：loginRoot 隐藏，roomListRoot 保留不消失，roomRoot 显示
+            if (loginRoot != null)
             {
-                lobbyBack.onClick.RemoveListener(OnLobbyBackClicked);
+                loginRoot.SetActive(targetState == AppUIState.Login);
             }
-            if (_uiButtons.TryGetValue(MARK_LOBBY_REFRESH, out Button lobbyRefresh) && lobbyRefresh != null)
-            {
-                lobbyRefresh.onClick.RemoveListener(OnLobbyRefreshClicked);
-            }
-            if (_uiButtons.TryGetValue(MARK_ROOM_BACK, out Button roomBack) && roomBack != null)
-            {
-                roomBack.onClick.RemoveListener(OnRoomBackClicked);
-            }
-        }
 
-        private void HandleSDKStateChanged(UserAppState oldState, UserAppState newState)
-        {
-            // SDK 状态变动防呆与容错：断开连接、异常、登出，都返回登录界面
-            if (newState == UserAppState.LoggedOut || newState == UserAppState.Error || newState == UserAppState.Init)
+            if (roomListRoot != null)
             {
-                GoToLogin();
+                roomListRoot.SetActive(targetState == AppUIState.Lobby || targetState == AppUIState.InRoom);
             }
-            else if (newState == UserAppState.LoggedIn)
+
+            if (roomRoot != null)
             {
-                GoToLobby();
+                roomRoot.SetActive(targetState == AppUIState.InRoom);
+            }
+
+            // 2. 内部 UI 视图与生命周期同步
+            if (loginView != null)
+            {
+                if (targetState == AppUIState.Login) loginView.Show();
+                else loginView.Hide();
+            }
+
+            if (lobbyView != null)
+            {
+                if (targetState == AppUIState.Lobby || targetState == AppUIState.InRoom) lobbyView.Show();
+                else lobbyView.Hide();
+            }
+
+            if (roomPanel != null)
+            {
+                roomPanel.SetActive(targetState == AppUIState.InRoom);
             }
         }
 
         public void GoToLogin()
         {
-            _currentState = AppUIState.Login;
-            SetPanelActive(MARK_LOGIN_PANEL, true);
-            SetPanelActive(MARK_LOBBY_PANEL, false);
-            SetPanelActive(MARK_ROOM_PANEL, false);
+            SwitchTo(AppUIState.Login);
         }
 
         public void GoToLobby()
         {
-            _currentState = AppUIState.Lobby;
-            SetPanelActive(MARK_LOGIN_PANEL, false);
-            SetPanelActive(MARK_LOBBY_PANEL, true);
-            SetPanelActive(MARK_ROOM_PANEL, false);
+            SwitchTo(AppUIState.Lobby);
         }
 
         public void JoinRoom()
         {
-            _currentState = AppUIState.InRoom;
-            SetPanelActive(MARK_LOGIN_PANEL, false);
-            // 核心需求：进入房间后大厅面板保持不隐藏
-            SetPanelActive(MARK_LOBBY_PANEL, true); 
-            SetPanelActive(MARK_ROOM_PANEL, true);
+            SwitchTo(AppUIState.InRoom);
         }
 
         public void LeaveRoom()
         {
-            // 断开流媒体与信令连接
-            if (SurgicalLivePlatform.Runtime.Services.RoomConnectionManager.Instance != null)
-            {
-                SurgicalLivePlatform.Runtime.Services.RoomConnectionManager.Instance.DisconnectAll();
-            }
-
-            // 触发事件通知 MeetManager 等底层模块断开具体流媒体连接
-            RoomJoinController.TriggerRoomLeave();
+            // 退出房间时，严格断开 LiveKit 流媒体与信令通道
+            DisconnectLiveKitAndSignaling();
 
             // 状态退回大厅
             GoToLobby();
@@ -198,15 +505,9 @@ namespace SurgicalLivePlatform.Example.Runtime.UI
 
         private async void OnLobbyBackClicked()
         {
-            // 防御性清理：如果在特殊情况下仍残留有房间连接，先将其清理干净
-            if (SurgicalLivePlatform.Runtime.Services.RoomConnectionManager.Instance != null)
-            {
-                SurgicalLivePlatform.Runtime.Services.RoomConnectionManager.Instance.DisconnectAll();
-            }
-            // 通知底层的 MeetManager 断开具体的 LiveKit 视频流连接
-            RoomJoinController.TriggerRoomLeave();
+            // 退出登录时，严格断开 LiveKit 流媒体与信令通道
+            DisconnectLiveKitAndSignaling();
 
-            // 点击大厅返回按钮，执行登出并退回登录页
             if (SurgicalLiveSDK.Auth != null)
             {
                 try
@@ -218,8 +519,7 @@ namespace SurgicalLivePlatform.Example.Runtime.UI
                     Debug.LogError($"[AppFlowController] 退出登录时发生异常: {ex.Message}");
                 }
             }
-            
-            // 修复 BUG：必须重置底层 SDK 状态，否则下次登录时因为状态同为 LoggedIn，不会触发 OnStateChanged 导致无法跳转
+
             if (SurgicalLiveSDK.StateManager != null)
             {
                 SurgicalLiveSDK.StateManager.ChangeState(UserAppState.LoggedOut);
@@ -232,39 +532,19 @@ namespace SurgicalLivePlatform.Example.Runtime.UI
 
         private void OnLobbyRefreshClicked()
         {
-            // 刷新房间列表数据
-            RoomLobbyView lobbyView = FindAnyObjectByType<RoomLobbyView>(FindObjectsInactive.Include);
-            if (lobbyView != null)
+            if (_lobbyPresenter != null)
+            {
+                _lobbyPresenter.RefreshRoomsAsync();
+            }
+            else if (lobbyView != null)
             {
                 lobbyView.RefreshRooms();
-            }
-            else
-            {
-                Debug.LogWarning("[AppFlowController] 找不到 RoomLobbyView 组件，无法刷新大厅列表！");
             }
         }
 
         private void OnRoomBackClicked()
         {
             LeaveRoom();
-        }
-
-        private void SetPanelActive(string markName, bool isActive)
-        {
-            if (_uiNodes.TryGetValue(markName, out GameObject panelObj) && panelObj != null)
-            {
-                panelObj.SetActive(isActive);
-                
-                // 兼容之前有 Rigidbody 物理节点包裹的情况
-                if (panelObj.transform.parent != null && panelObj.transform.parent.parent != null)
-                {
-                    var rb = panelObj.transform.parent.parent.GetComponent<Rigidbody>();
-                    if (rb != null)
-                    {
-                        rb.gameObject.SetActive(isActive);
-                    }
-                }
-            }
         }
     }
 }

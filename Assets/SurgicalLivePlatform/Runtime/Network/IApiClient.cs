@@ -15,6 +15,11 @@ namespace SurgicalLivePlatform.Runtime.Network
         /// </summary>
         void SetAccessToken(string token);
 
+        /// <summary>
+        /// 当前是否持有有效的 Access Token
+        /// </summary>
+        bool HasValidAccessToken { get; }
+
         #region 模块 1: 认证与用户信息 (Auth & User)
 
         /// <summary>

@@ -56,11 +56,41 @@ namespace SurgicalLivePlatform.Runtime.Network
 
         #region 基础请求封装 (Base Request Wrappers)
 
+        private string _accessToken;
+
+        /// <summary>
+        /// 当前是否持有有效的 Access Token
+        /// </summary>
+        public bool HasValidAccessToken => !string.IsNullOrEmpty(_accessToken);
+
+        private static readonly HashSet<string> AnonymousEndpoints = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "/auth/login",
+            "/auth/device/login",
+            "/auth/pattern/verify",
+            "/auth/pattern/setup",
+            "/auth/refresh"
+        };
+
+        private bool IsAnonymousEndpoint(string endpoint)
+        {
+            if (string.IsNullOrEmpty(endpoint)) return false;
+            foreach (var anon in AnonymousEndpoints)
+            {
+                if (endpoint.StartsWith(anon, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         /// <summary>
         /// 设置或清除全局 HTTP 请求头中的 Bearer Token
         /// </summary>
         public void SetAccessToken(string token)
         {
+            _accessToken = token;
             if (string.IsNullOrEmpty(token))
             {
                 _httpClient.DefaultRequestHeaders.Authorization = null;
@@ -75,6 +105,12 @@ namespace SurgicalLivePlatform.Runtime.Network
         {
             string url = $"{BaseUrl}{endpoint}";
             
+            // 路由请求守卫拦截：未登录且非白名单接口，禁止向受保护端点发送网络请求
+            if (!IsAnonymousEndpoint(endpoint) && !HasValidAccessToken)
+            {
+                throw new UnauthorizedAccessException($"[路由守卫拦截] 未通过身份验证，禁止向受保护端点发起请求: {method} {url}");
+            }
+
             try
             {
                 var response = await requestFunc();
@@ -142,7 +178,11 @@ namespace SurgicalLivePlatform.Runtime.Network
             {
                 if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
-                    _dispatcher?.TriggerAuthExpired();
+                    // 仅当刷新 Token 自身 401 时触发凭证过期广播；普通接口 401 交由 AuthService 自动续期
+                    if (endpoint != null && endpoint.Contains("/auth/refresh"))
+                    {
+                        _dispatcher?.TriggerAuthExpired();
+                    }
                 }
                 else if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
                 {

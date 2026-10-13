@@ -4,6 +4,7 @@
     "references": [
         "SurgicalLivePlatform.Runtime",
         "SurgicalLivePlatform.Example.Runtime",
+        "Unity.TextMeshPro",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

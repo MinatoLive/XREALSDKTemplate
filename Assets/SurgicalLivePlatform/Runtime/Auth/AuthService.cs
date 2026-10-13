@@ -22,6 +22,7 @@ namespace SurgicalLivePlatform.Runtime.Auth
         
         // 信号量锁：用于 401 并发控制，确保只有一个线程执行 RefreshToken
         private readonly SemaphoreSlim _refreshLock = new SemaphoreSlim(1, 1);
+        private volatile int _tokenVersion = 0;
         
         /// <summary>
         /// 当前登录的用户 ID
@@ -134,33 +135,42 @@ namespace SurgicalLivePlatform.Runtime.Auth
             await _refreshLock.WaitAsync();
             try
             {
-                if (string.IsNullOrEmpty(CurrentUserId)) throw new Exception("当前无登录用户，无法刷新 Token (No user logged in)");
-
-                var userData = await _storage.GetUserAsync(CurrentUserId);
-                if (userData == null || string.IsNullOrEmpty(userData.refresh_token))
-                {
-                    throw new Exception("当前用户无本地刷新令牌 (No refresh token available)");
-                }
-
-                var request = new RefreshRequest { refresh_token = userData.refresh_token };
-                try
-                {
-                    var response = await _apiClient.RefreshTokenAsync(request);
-                    await HandleAuthSuccessAsync(response);
-                }
-                catch (Exception ex) when (ex.Message.Contains("401") || ex.Message.Contains("403"))
-                {
-                    // Refresh token is invalid/expired
-                    await _storage.RemoveUserAsync(CurrentUserId);
-                    CurrentUserId = null;
-                    _apiClient.SetAccessToken(null);
-                    _dispatcher?.TriggerAuthExpired();
-                    throw new Exception("登录已过期，请重新登录 (Auth Expired)", ex);
-                }
+                await RefreshTokenInternalAsync();
+                _tokenVersion++;
             }
             finally
             {
                 _refreshLock.Release();
+            }
+        }
+
+        private async Task RefreshTokenInternalAsync()
+        {
+            if (string.IsNullOrEmpty(CurrentUserId)) throw new Exception("当前无登录用户，无法刷新 Token (No user logged in)");
+
+            var userData = await _storage.GetUserAsync(CurrentUserId);
+            if (userData == null || string.IsNullOrEmpty(userData.refresh_token))
+            {
+                throw new Exception("当前用户无本地刷新令牌 (No refresh token available)");
+            }
+
+            var request = new RefreshRequest { refresh_token = userData.refresh_token };
+            try
+            {
+                var response = await _apiClient.RefreshTokenAsync(request);
+                await HandleAuthSuccessAsync(response);
+            }
+            catch (Exception ex) when (ex.Message != null && (ex.Message.Contains("401") || ex.Message.Contains("403")))
+            {
+                // Refresh token is invalid/expired
+                if (!string.IsNullOrEmpty(CurrentUserId))
+                {
+                    await _storage.RemoveUserAsync(CurrentUserId);
+                }
+                CurrentUserId = null;
+                _apiClient.SetAccessToken(null);
+                _dispatcher?.TriggerAuthExpired();
+                throw new Exception("登录已过期，请重新登录 (Auth Expired)", ex);
             }
         }
 
@@ -169,8 +179,13 @@ namespace SurgicalLivePlatform.Runtime.Auth
         /// </summary>
         public async Task LogoutAsync()
         {
+            if (!string.IsNullOrEmpty(CurrentUserId))
+            {
+                await _storage.RemoveUserAsync(CurrentUserId);
+            }
             CurrentUserId = null;
             _apiClient.SetAccessToken(null);
+            _tokenVersion++;
         }
 
         #endregion
@@ -347,6 +362,12 @@ namespace SurgicalLivePlatform.Runtime.Auth
 
         #region 401 自动重试核心逻辑 (401 Retry Core Logic)
 
+        private bool IsUnauthorizedException(Exception ex)
+        {
+            if (ex is UnauthorizedAccessException) return false;
+            return ex.Message != null && ex.Message.Contains("401");
+        }
+
         /// <summary>
         /// 通用的带 401 自动续期的 API 调用执行器
         /// </summary>
@@ -355,14 +376,29 @@ namespace SurgicalLivePlatform.Runtime.Auth
         /// <returns>API 返回的结果</returns>
         private async Task<T> ExecuteWithRetryAsync<T>(Func<Task<T>> action)
         {
+            int startVersion = _tokenVersion;
             try
             {
                 return await action();
             }
-            catch (Exception ex) when (ex.Message.Contains("401"))
+            catch (Exception ex) when (IsUnauthorizedException(ex))
             {
-                // 如果发现 401，尝试刷新 Token 后再重试一次
-                await RefreshTokenAsync();
+                await _refreshLock.WaitAsync();
+                try
+                {
+                    // 双重检查：若排队期间其他并发请求已完成刷新，则跳过重复网络调用
+                    if (_tokenVersion == startVersion)
+                    {
+                        await RefreshTokenInternalAsync();
+                        _tokenVersion++;
+                    }
+                }
+                finally
+                {
+                    _refreshLock.Release();
+                }
+
+                // 仅重试一次，使用刷新后的新 Token 恢复原业务网络请求
                 return await action();
             }
         }

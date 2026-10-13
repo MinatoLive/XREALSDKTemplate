@@ -16,6 +16,274 @@ MonoBehaviour:
     status: DEFAULT
     elementOverrides: []
   statusStyles:
+  - status: unclick
+    elementOverrides:
+    - targetPath: 
+      componentName: RoomCardItem
+      modifyActive: 1
+      isActive: 1
+      modifyColor: 1
+      color: {r: 0.21176471, g: 0.67058825, b: 0.8, a: 0.47058824}
+      modifyFontSize: 0
+      fontSize: 14
+      modifySprite: 1
+      sprite: {fileID: 21300000, guid: 32f6e596194300847a1de93cafb51937, type: 3}
+    - targetPath: CoverImage
+      componentName: CoverImage
+      modifyActive: 1
+      isActive: 1
+      modifyColor: 1
+      color: {r: 0.8000001, g: 0.9725491, b: 1, a: 1}
+      modifyFontSize: 0
+      fontSize: 14
+      modifySprite: 1
+      sprite: {fileID: 10911, guid: 0000000000000000f000000000000000, type: 0}
+    - targetPath: CoverImage/tex
+      componentName: tex
+      modifyActive: 1
+      isActive: 1
+      modifyColor: 1
+      color: {r: 1, g: 1, b: 1, a: 1}
+      modifyFontSize: 0
+      fontSize: 14
+      modifySprite: 0
+      sprite: {fileID: 0}
+    - targetPath: NameText
+      componentName: NameText
+      modifyActive: 1
+      isActive: 1
+      modifyColor: 1
+      color: {r: 0.8000001, g: 0.9725491, b: 1, a: 1}
+      modifyFontSize: 1
+      fontSize: 28.4
+      modifySprite: 0
+      sprite: {fileID: 0}
+    - targetPath: Num
+      componentName: Num
+      modifyActive: 1
+      isActive: 1
+      modifyColor: 1
+      color: {r: 0.5058824, g: 0.93725497, b: 1, a: 1}
+      modifyFontSize: 0
+      fontSize: 14
+      modifySprite: 1
+      sprite: {fileID: 21300000, guid: e19d38eb49f66a541b4e6a8d0a8056f7, type: 3}
+    - targetPath: Num/NumText
+      componentName: NumText
+      modifyActive: 1
+      isActive: 1
+      modifyColor: 1
+      color: {r: 0.8000001, g: 0.9725491, b: 1, a: 1}
+      modifyFontSize: 1
+      fontSize: 32
+      modifySprite: 0
+      sprite: {fileID: 0}
+    - targetPath: DescText
+      componentName: DescText
+      modifyActive: 1
+      isActive: 0
+      modifyColor: 1
+      color: {r: 0, g: 0, b: 0, a: 1}
+      modifyFontSize: 1
+      fontSize: 10
+      modifySprite: 0
+      sprite: {fileID: 0}
+    - targetPath: PartText
+      componentName: PartText
+      modifyActive: 1
+      isActive: 1
+      modifyColor: 1
+      color: {r: 1, g: 1, b: 1, a: 1}
+      modifyFontSize: 1
+      fontSize: 24
+      modifySprite: 0
+      sprite: {fileID: 0}
+    - targetPath: 'PartText/TMP SubMeshUI [Orbitron-SemiBold SDF Material + MSYH
+        SDF Atlas]'
+      componentName: 'TMP SubMeshUI [Orbitron-SemiBold SDF Material + MSYH SDF Atlas]'
+      modifyActive: 1
+      isActive: 1
+      modifyColor: 1
+      color: {r: 1, g: 1, b: 1, a: 1}
+      modifyFontSize: 0
+      fontSize: 14
+      modifySprite: 0
+      sprite: {fileID: 0}
+    - targetPath: 'PartText/TMP SubMeshUI [TwemojiAtlas Material]'
+      componentName: 'TMP SubMeshUI [TwemojiAtlas Material]'
+      modifyActive: 1
+      isActive: 1
+      modifyColor: 1
+      color: {r: 1, g: 1, b: 1, a: 1}
+      modifyFontSize: 0
+      fontSize: 14
+      modifySprite: 0
+      sprite: {fileID: 0}
+    - targetPath: StatusType
+      componentName: StatusType
+      modifyActive: 1
+      isActive: 1
+      modifyColor: 1
+      color: {r: 0.85, g: 1, b: 0.85, a: 1}
+      modifyFontSize: 0
+      fontSize: 14
+      modifySprite: 1
+      sprite: {fileID: 21300000, guid: bc23aa569cb541f4eacbc8d8f4d4f258, type: 3}
+    - targetPath: StatusType/Text
+      componentName: Text
+      modifyActive: 1
+      isActive: 1
+      modifyColor: 1
+      color: {r: 0.41960788, g: 0.93725497, b: 0.85098046, a: 1}
+      modifyFontSize: 1
+      fontSize: 26.71
+      modifySprite: 0
+      sprite: {fileID: 0}
+    - targetPath: 'StatusType/Text/TMP SubMeshUI [Electronic Highway Sign SDF Material
+        + MSYH SDF Atlas]'
+      componentName: 'TMP SubMeshUI [Electronic Highway Sign SDF Material + MSYH
+        SDF Atlas]'
+      modifyActive: 1
+      isActive: 1
+      modifyColor: 1
+      color: {r: 1, g: 1, b: 1, a: 1}
+      modifyFontSize: 0
+      fontSize: 14
+      modifySprite: 0
+      sprite: {fileID: 0}
+    - targetPath: StatusTag
+      componentName: StatusTag
+      modifyActive: 1
+      isActive: 1
+      modifyColor: 1
+      color: {r: 0.2627451, g: 0.90588236, b: 1, a: 1}
+      modifyFontSize: 0
+      fontSize: 14
+      modifySprite: 1
+      sprite: {fileID: 21300000, guid: 226a11eec46891c499cd365c02c7d384, type: 3}
+    - targetPath: StatusTag/Text
+      componentName: Text
+      modifyActive: 1
+      isActive: 1
+      modifyColor: 1
+      color: {r: 0.25882354, g: 0.9058824, b: 1, a: 1}
+      modifyFontSize: 1
+      fontSize: 24.5
+      modifySprite: 0
+      sprite: {fileID: 0}
+    - targetPath: 'StatusTag/Text/TMP SubMeshUI [Orbitron-SemiBold SDF Material +
+        MSYH SDF Atlas]'
+      componentName: 'TMP SubMeshUI [Orbitron-SemiBold SDF Material + MSYH SDF Atlas]'
+      modifyActive: 1
+      isActive: 1
+      modifyColor: 1
+      color: {r: 1, g: 1, b: 1, a: 1}
+      modifyFontSize: 0
+      fontSize: 14
+      modifySprite: 0
+      sprite: {fileID: 0}
+    - targetPath: 'StatusTag/Text/TMP SubMeshUI [Orbitron-SemiBold SDF Material +
+        MSYH SDF Atlas]'
+      componentName: 'TMP SubMeshUI [Orbitron-SemiBold SDF Material + MSYH SDF Atlas]'
+      modifyActive: 1
+      isActive: 1
+      modifyColor: 1
+      color: {r: 1, g: 1, b: 1, a: 1}
+      modifyFontSize: 0
+      fontSize: 14
+      modifySprite: 0
+      sprite: {fileID: 0}
+    - targetPath: CreatorName
+      componentName: CreatorName
+      modifyActive: 1
+      isActive: 1
+      modifyColor: 1
+      color: {r: 0.8, g: 0.972549, b: 1, a: 1}
+      modifyFontSize: 1
+      fontSize: 40
+      modifySprite: 0
+      sprite: {fileID: 0}
+    - targetPath: CreatorName/CreatorAvatar
+      componentName: CreatorAvatar
+      modifyActive: 1
+      isActive: 1
+      modifyColor: 1
+      color: {r: 0.8, g: 0.972549, b: 1, a: 1}
+      modifyFontSize: 0
+      fontSize: 14
+      modifySprite: 0
+      sprite: {fileID: 0}
+    - targetPath: CreatorTime
+      componentName: CreatorTime
+      modifyActive: 1
+      isActive: 1
+      modifyColor: 1
+      color: {r: 0.8, g: 0.972549, b: 1, a: 1}
+      modifyFontSize: 1
+      fontSize: 28
+      modifySprite: 0
+      sprite: {fileID: 0}
+    - targetPath: CreatorTime/CreatorAvatar
+      componentName: CreatorAvatar
+      modifyActive: 1
+      isActive: 1
+      modifyColor: 1
+      color: {r: 0.8, g: 0.972549, b: 1, a: 1}
+      modifyFontSize: 0
+      fontSize: 14
+      modifySprite: 0
+      sprite: {fileID: 0}
+    - targetPath: CreatorMin
+      componentName: CreatorMin
+      modifyActive: 1
+      isActive: 1
+      modifyColor: 1
+      color: {r: 0.8, g: 0.972549, b: 1, a: 1}
+      modifyFontSize: 1
+      fontSize: 28
+      modifySprite: 0
+      sprite: {fileID: 0}
+    - targetPath: CreatorMin/CreatorAvatar
+      componentName: CreatorAvatar
+      modifyActive: 1
+      isActive: 1
+      modifyColor: 1
+      color: {r: 0.8, g: 0.972549, b: 1, a: 1}
+      modifyFontSize: 0
+      fontSize: 14
+      modifySprite: 0
+      sprite: {fileID: 0}
+    - targetPath: Login
+      componentName: Login
+      modifyActive: 1
+      isActive: 1
+      modifyColor: 1
+      color: {r: 1, g: 1, b: 1, a: 1}
+      modifyFontSize: 0
+      fontSize: 14
+      modifySprite: 1
+      sprite: {fileID: 21300000, guid: 705de7f3e2e4d904bab34db1e1e026c0, type: 3}
+    - targetPath: Login/Text (TMP)Title
+      componentName: Text (TMP)Title
+      modifyActive: 1
+      isActive: 1
+      modifyColor: 1
+      color: {r: 0.05490196, g: 0.12941177, b: 0.2, a: 1}
+      modifyFontSize: 1
+      fontSize: 48
+      modifySprite: 0
+      sprite: {fileID: 0}
+    - targetPath: 'Login/Text (TMP)Title/TMP SubMeshUI [Orbitron-SemiBold SDF Material
+        + MSYH SDF Atlas]'
+      componentName: 'TMP SubMeshUI [Orbitron-SemiBold SDF Material + MSYH SDF Atlas]'
+      modifyActive: 1
+      isActive: 1
+      modifyColor: 1
+      color: {r: 1, g: 1, b: 1, a: 1}
+      modifyFontSize: 0
+      fontSize: 14
+      modifySprite: 0
+      sprite: {fileID: 0}
   - status: onclick
     elementOverrides:
     - targetPath: 
@@ -23,32 +291,22 @@ MonoBehaviour:
       modifyActive: 1
       isActive: 1
       modifyColor: 1
-      color: {r: 0.04705883, g: 0.5764706, b: 0.69803923, a: 1}
+      color: {r: 0, g: 0.7211318, b: 0.9245283, a: 1}
       modifyFontSize: 0
       fontSize: 14
       modifySprite: 1
-      sprite: {fileID: 10911, guid: 0000000000000000f000000000000000, type: 0}
-    - targetPath: CardItem
-      componentName: CardItem
-      modifyActive: 1
-      isActive: 1
-      modifyColor: 1
-      color: {r: 0.9, g: 0.9, b: 0.9, a: 1}
-      modifyFontSize: 0
-      fontSize: 14
-      modifySprite: 1
-      sprite: {fileID: 10911, guid: 0000000000000000f000000000000000, type: 0}
-    - targetPath: CardItem/CoverImage
+      sprite: {fileID: 21300000, guid: 32f6e596194300847a1de93cafb51937, type: 3}
+    - targetPath: CoverImage
       componentName: CoverImage
       modifyActive: 1
       isActive: 1
       modifyColor: 1
-      color: {r: 0.8941177, g: 0.91372555, b: 0.9450981, a: 1}
+      color: {r: 0.8000001, g: 0.9725491, b: 1, a: 1}
       modifyFontSize: 0
       fontSize: 14
       modifySprite: 1
       sprite: {fileID: 10911, guid: 0000000000000000f000000000000000, type: 0}
-    - targetPath: CardItem/CoverImage/tex
+    - targetPath: CoverImage/tex
       componentName: tex
       modifyActive: 1
       isActive: 1
@@ -58,27 +316,37 @@ MonoBehaviour:
       fontSize: 14
       modifySprite: 0
       sprite: {fileID: 0}
-    - targetPath: CardItem/NameText
+    - targetPath: NameText
       componentName: NameText
       modifyActive: 1
       isActive: 1
       modifyColor: 1
-      color: {r: 0, g: 0, b: 0, a: 1}
+      color: {r: 0.8000001, g: 0.9725491, b: 1, a: 1}
       modifyFontSize: 1
-      fontSize: 16
+      fontSize: 28.4
       modifySprite: 0
       sprite: {fileID: 0}
-    - targetPath: CardItem/NumText
+    - targetPath: Num
+      componentName: Num
+      modifyActive: 1
+      isActive: 1
+      modifyColor: 1
+      color: {r: 0.5058824, g: 0.93725497, b: 1, a: 1}
+      modifyFontSize: 0
+      fontSize: 14
+      modifySprite: 1
+      sprite: {fileID: 21300000, guid: e19d38eb49f66a541b4e6a8d0a8056f7, type: 3}
+    - targetPath: Num/NumText
       componentName: NumText
       modifyActive: 1
       isActive: 1
       modifyColor: 1
-      color: {r: 0, g: 0, b: 0, a: 1}
+      color: {r: 0.8000001, g: 0.9725491, b: 1, a: 1}
       modifyFontSize: 1
-      fontSize: 20
+      fontSize: 32
       modifySprite: 0
       sprite: {fileID: 0}
-    - targetPath: CardItem/DescText
+    - targetPath: DescText
       componentName: DescText
       modifyActive: 1
       isActive: 0
@@ -88,17 +356,28 @@ MonoBehaviour:
       fontSize: 10
       modifySprite: 0
       sprite: {fileID: 0}
-    - targetPath: CardItem/PartText
+    - targetPath: PartText
       componentName: PartText
       modifyActive: 1
       isActive: 1
       modifyColor: 1
-      color: {r: 0, g: 0, b: 0, a: 1}
+      color: {r: 1, g: 1, b: 1, a: 1}
       modifyFontSize: 1
-      fontSize: 10
+      fontSize: 24
       modifySprite: 0
       sprite: {fileID: 0}
-    - targetPath: 'CardItem/PartText/TMP SubMeshUI [TwemojiAtlas Material]'
+    - targetPath: 'PartText/TMP SubMeshUI [Orbitron-SemiBold SDF Material + MSYH
+        SDF Atlas]'
+      componentName: 'TMP SubMeshUI [Orbitron-SemiBold SDF Material + MSYH SDF Atlas]'
+      modifyActive: 1
+      isActive: 1
+      modifyColor: 1
+      color: {r: 1, g: 1, b: 1, a: 1}
+      modifyFontSize: 0
+      fontSize: 14
+      modifySprite: 0
+      sprite: {fileID: 0}
+    - targetPath: 'PartText/TMP SubMeshUI [TwemojiAtlas Material]'
       componentName: 'TMP SubMeshUI [TwemojiAtlas Material]'
       modifyActive: 1
       isActive: 1
@@ -108,107 +387,141 @@ MonoBehaviour:
       fontSize: 14
       modifySprite: 0
       sprite: {fileID: 0}
-    - targetPath: CardItem/StatusTag
-      componentName: StatusTag
-      modifyActive: 1
-      isActive: 1
-      modifyColor: 1
-      color: {r: 0, g: 0.655005, b: 1, a: 1}
-      modifyFontSize: 0
-      fontSize: 14
-      modifySprite: 1
-      sprite: {fileID: 21300000, guid: b6af224c1641247d2ae64274fc5c8800, type: 3}
-    - targetPath: CardItem/StatusTag/Text
-      componentName: Text
-      modifyActive: 1
-      isActive: 1
-      modifyColor: 1
-      color: {r: 1, g: 0, b: 0, a: 1}
-      modifyFontSize: 1
-      fontSize: 10
-      modifySprite: 0
-      sprite: {fileID: 0}
-    - targetPath: CardItem/StatusType
+    - targetPath: StatusType
       componentName: StatusType
       modifyActive: 1
       isActive: 1
       modifyColor: 1
-      color: {r: 0, g: 0.655005, b: 1, a: 1}
+      color: {r: 0.85, g: 1, b: 0.85, a: 1}
       modifyFontSize: 0
       fontSize: 14
       modifySprite: 1
-      sprite: {fileID: 21300000, guid: b6af224c1641247d2ae64274fc5c8800, type: 3}
-    - targetPath: CardItem/StatusType/Text
+      sprite: {fileID: 21300000, guid: bc23aa569cb541f4eacbc8d8f4d4f258, type: 3}
+    - targetPath: StatusType/Text
       componentName: Text
       modifyActive: 1
       isActive: 1
       modifyColor: 1
-      color: {r: 1, g: 0, b: 0, a: 1}
+      color: {r: 0.41960788, g: 0.93725497, b: 0.85098046, a: 1}
       modifyFontSize: 1
-      fontSize: 10
+      fontSize: 26.71
       modifySprite: 0
       sprite: {fileID: 0}
-    - targetPath: CardItem/CreatorName
+    - targetPath: 'StatusType/Text/TMP SubMeshUI [Electronic Highway Sign SDF Material
+        + MSYH SDF Atlas]'
+      componentName: 'TMP SubMeshUI [Electronic Highway Sign SDF Material + MSYH
+        SDF Atlas]'
+      modifyActive: 1
+      isActive: 1
+      modifyColor: 1
+      color: {r: 1, g: 1, b: 1, a: 1}
+      modifyFontSize: 0
+      fontSize: 14
+      modifySprite: 0
+      sprite: {fileID: 0}
+    - targetPath: StatusTag
+      componentName: StatusTag
+      modifyActive: 1
+      isActive: 1
+      modifyColor: 1
+      color: {r: 0.2627451, g: 0.90588236, b: 1, a: 1}
+      modifyFontSize: 0
+      fontSize: 14
+      modifySprite: 1
+      sprite: {fileID: 21300000, guid: 226a11eec46891c499cd365c02c7d384, type: 3}
+    - targetPath: StatusTag/Text
+      componentName: Text
+      modifyActive: 1
+      isActive: 1
+      modifyColor: 1
+      color: {r: 0.25882354, g: 0.9058824, b: 1, a: 1}
+      modifyFontSize: 1
+      fontSize: 24.5
+      modifySprite: 0
+      sprite: {fileID: 0}
+    - targetPath: 'StatusTag/Text/TMP SubMeshUI [Orbitron-SemiBold SDF Material +
+        MSYH SDF Atlas]'
+      componentName: 'TMP SubMeshUI [Orbitron-SemiBold SDF Material + MSYH SDF Atlas]'
+      modifyActive: 1
+      isActive: 1
+      modifyColor: 1
+      color: {r: 1, g: 1, b: 1, a: 1}
+      modifyFontSize: 0
+      fontSize: 14
+      modifySprite: 0
+      sprite: {fileID: 0}
+    - targetPath: 'StatusTag/Text/TMP SubMeshUI [Orbitron-SemiBold SDF Material +
+        MSYH SDF Atlas]'
+      componentName: 'TMP SubMeshUI [Orbitron-SemiBold SDF Material + MSYH SDF Atlas]'
+      modifyActive: 1
+      isActive: 1
+      modifyColor: 1
+      color: {r: 1, g: 1, b: 1, a: 1}
+      modifyFontSize: 0
+      fontSize: 14
+      modifySprite: 0
+      sprite: {fileID: 0}
+    - targetPath: CreatorName
       componentName: CreatorName
       modifyActive: 1
       isActive: 1
       modifyColor: 1
-      color: {r: 0, g: 0, b: 0, a: 1}
+      color: {r: 0.8, g: 0.972549, b: 1, a: 1}
       modifyFontSize: 1
-      fontSize: 20
+      fontSize: 40
       modifySprite: 0
       sprite: {fileID: 0}
-    - targetPath: CardItem/CreatorName/CreatorAvatar
+    - targetPath: CreatorName/CreatorAvatar
       componentName: CreatorAvatar
       modifyActive: 1
       isActive: 1
       modifyColor: 1
-      color: {r: 1, g: 1, b: 1, a: 1}
+      color: {r: 0.8, g: 0.972549, b: 1, a: 1}
       modifyFontSize: 0
       fontSize: 14
       modifySprite: 0
       sprite: {fileID: 0}
-    - targetPath: CardItem/CreatorTime
+    - targetPath: CreatorTime
       componentName: CreatorTime
       modifyActive: 1
       isActive: 1
       modifyColor: 1
-      color: {r: 0.3773585, g: 0.3773585, b: 0.3773585, a: 1}
+      color: {r: 0.8, g: 0.972549, b: 1, a: 1}
       modifyFontSize: 1
-      fontSize: 14.67
+      fontSize: 28
       modifySprite: 0
       sprite: {fileID: 0}
-    - targetPath: CardItem/CreatorTime/CreatorAvatar
+    - targetPath: CreatorTime/CreatorAvatar
       componentName: CreatorAvatar
       modifyActive: 1
       isActive: 1
       modifyColor: 1
-      color: {r: 1, g: 1, b: 1, a: 1}
+      color: {r: 0.8, g: 0.972549, b: 1, a: 1}
       modifyFontSize: 0
       fontSize: 14
       modifySprite: 0
       sprite: {fileID: 0}
-    - targetPath: CardItem/CreatorMin
+    - targetPath: CreatorMin
       componentName: CreatorMin
       modifyActive: 1
       isActive: 1
       modifyColor: 1
-      color: {r: 0.3773585, g: 0.3773585, b: 0.3773585, a: 1}
+      color: {r: 0.8, g: 0.972549, b: 1, a: 1}
       modifyFontSize: 1
-      fontSize: 14.67
+      fontSize: 28
       modifySprite: 0
       sprite: {fileID: 0}
-    - targetPath: CardItem/CreatorMin/CreatorAvatar
+    - targetPath: CreatorMin/CreatorAvatar
       componentName: CreatorAvatar
       modifyActive: 1
       isActive: 1
       modifyColor: 1
-      color: {r: 1, g: 1, b: 1, a: 1}
+      color: {r: 0.8, g: 0.972549, b: 1, a: 1}
       modifyFontSize: 0
       fontSize: 14
       modifySprite: 0
       sprite: {fileID: 0}
-    - targetPath: CardItem/Login
+    - targetPath: Login
       componentName: Login
       modifyActive: 1
       isActive: 1
@@ -217,226 +530,25 @@ MonoBehaviour:
       modifyFontSize: 0
       fontSize: 14
       modifySprite: 1
-      sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-    - targetPath: CardItem/Login/Text (Legacy)
-      componentName: Text (Legacy)
+      sprite: {fileID: 21300000, guid: 705de7f3e2e4d904bab34db1e1e026c0, type: 3}
+    - targetPath: Login/Text (TMP)Title
+      componentName: Text (TMP)Title
       modifyActive: 1
       isActive: 1
       modifyColor: 1
-      color: {r: 1, g: 1, b: 1, a: 1}
+      color: {r: 0.05490196, g: 0.12941177, b: 0.2, a: 1}
       modifyFontSize: 1
-      fontSize: 14
+      fontSize: 48
       modifySprite: 0
       sprite: {fileID: 0}
-  - status: unclick
-    elementOverrides:
-    - targetPath: RoomCardItem
-      componentName: RoomCardItem
-      modifyActive: 1
-      isActive: 1
-      modifyColor: 1
-      color: {r: 0.44654083, g: 0.44654083, b: 0.44654083, a: 1}
-      modifyFontSize: 0
-      fontSize: 14
-      modifySprite: 1
-      sprite: {fileID: 10911, guid: 0000000000000000f000000000000000, type: 0}
-    - targetPath: CardItem
-      componentName: CardItem
-      modifyActive: 1
-      isActive: 1
-      modifyColor: 1
-      color: {r: 0.9, g: 0.9, b: 0.9, a: 1}
-      modifyFontSize: 0
-      fontSize: 14
-      modifySprite: 1
-      sprite: {fileID: 10911, guid: 0000000000000000f000000000000000, type: 0}
-    - targetPath: CardItem/CoverImage
-      componentName: CoverImage
-      modifyActive: 1
-      isActive: 1
-      modifyColor: 1
-      color: {r: 0.8941177, g: 0.91372555, b: 0.9450981, a: 1}
-      modifyFontSize: 0
-      fontSize: 14
-      modifySprite: 1
-      sprite: {fileID: 10911, guid: 0000000000000000f000000000000000, type: 0}
-    - targetPath: CardItem/CoverImage/tex
-      componentName: tex
+    - targetPath: 'Login/Text (TMP)Title/TMP SubMeshUI [Orbitron-SemiBold SDF Material
+        + MSYH SDF Atlas]'
+      componentName: 'TMP SubMeshUI [Orbitron-SemiBold SDF Material + MSYH SDF Atlas]'
       modifyActive: 1
       isActive: 1
       modifyColor: 1
       color: {r: 1, g: 1, b: 1, a: 1}
       modifyFontSize: 0
-      fontSize: 14
-      modifySprite: 0
-      sprite: {fileID: 0}
-    - targetPath: CardItem/NameText
-      componentName: NameText
-      modifyActive: 1
-      isActive: 1
-      modifyColor: 1
-      color: {r: 0, g: 0, b: 0, a: 1}
-      modifyFontSize: 1
-      fontSize: 16
-      modifySprite: 0
-      sprite: {fileID: 0}
-    - targetPath: CardItem/NumText
-      componentName: NumText
-      modifyActive: 1
-      isActive: 1
-      modifyColor: 1
-      color: {r: 0, g: 0, b: 0, a: 1}
-      modifyFontSize: 1
-      fontSize: 20
-      modifySprite: 0
-      sprite: {fileID: 0}
-    - targetPath: CardItem/DescText
-      componentName: DescText
-      modifyActive: 1
-      isActive: 0
-      modifyColor: 1
-      color: {r: 0, g: 0, b: 0, a: 1}
-      modifyFontSize: 1
-      fontSize: 10
-      modifySprite: 0
-      sprite: {fileID: 0}
-    - targetPath: CardItem/PartText
-      componentName: PartText
-      modifyActive: 1
-      isActive: 1
-      modifyColor: 1
-      color: {r: 0, g: 0, b: 0, a: 1}
-      modifyFontSize: 1
-      fontSize: 10
-      modifySprite: 0
-      sprite: {fileID: 0}
-    - targetPath: 'CardItem/PartText/TMP SubMeshUI [TwemojiAtlas Material]'
-      componentName: 'TMP SubMeshUI [TwemojiAtlas Material]'
-      modifyActive: 1
-      isActive: 1
-      modifyColor: 1
-      color: {r: 1, g: 1, b: 1, a: 1}
-      modifyFontSize: 0
-      fontSize: 14
-      modifySprite: 0
-      sprite: {fileID: 0}
-    - targetPath: CardItem/StatusTag
-      componentName: StatusTag
-      modifyActive: 1
-      isActive: 1
-      modifyColor: 1
-      color: {r: 0, g: 0.655005, b: 1, a: 1}
-      modifyFontSize: 0
-      fontSize: 14
-      modifySprite: 1
-      sprite: {fileID: 21300000, guid: b6af224c1641247d2ae64274fc5c8800, type: 3}
-    - targetPath: CardItem/StatusTag/Text
-      componentName: Text
-      modifyActive: 1
-      isActive: 1
-      modifyColor: 1
-      color: {r: 1, g: 0, b: 0, a: 1}
-      modifyFontSize: 1
-      fontSize: 10
-      modifySprite: 0
-      sprite: {fileID: 0}
-    - targetPath: CardItem/StatusType
-      componentName: StatusType
-      modifyActive: 1
-      isActive: 1
-      modifyColor: 1
-      color: {r: 0, g: 0.655005, b: 1, a: 1}
-      modifyFontSize: 0
-      fontSize: 14
-      modifySprite: 1
-      sprite: {fileID: 21300000, guid: b6af224c1641247d2ae64274fc5c8800, type: 3}
-    - targetPath: CardItem/StatusType/Text
-      componentName: Text
-      modifyActive: 1
-      isActive: 1
-      modifyColor: 1
-      color: {r: 1, g: 0, b: 0, a: 1}
-      modifyFontSize: 1
-      fontSize: 10
-      modifySprite: 0
-      sprite: {fileID: 0}
-    - targetPath: CardItem/CreatorName
-      componentName: CreatorName
-      modifyActive: 1
-      isActive: 1
-      modifyColor: 1
-      color: {r: 0, g: 0, b: 0, a: 1}
-      modifyFontSize: 1
-      fontSize: 20
-      modifySprite: 0
-      sprite: {fileID: 0}
-    - targetPath: CardItem/CreatorName/CreatorAvatar
-      componentName: CreatorAvatar
-      modifyActive: 1
-      isActive: 1
-      modifyColor: 1
-      color: {r: 1, g: 1, b: 1, a: 1}
-      modifyFontSize: 0
-      fontSize: 14
-      modifySprite: 0
-      sprite: {fileID: 0}
-    - targetPath: CardItem/CreatorTime
-      componentName: CreatorTime
-      modifyActive: 1
-      isActive: 1
-      modifyColor: 1
-      color: {r: 0.3773585, g: 0.3773585, b: 0.3773585, a: 1}
-      modifyFontSize: 1
-      fontSize: 14.67
-      modifySprite: 0
-      sprite: {fileID: 0}
-    - targetPath: CardItem/CreatorTime/CreatorAvatar
-      componentName: CreatorAvatar
-      modifyActive: 1
-      isActive: 1
-      modifyColor: 1
-      color: {r: 1, g: 1, b: 1, a: 1}
-      modifyFontSize: 0
-      fontSize: 14
-      modifySprite: 0
-      sprite: {fileID: 0}
-    - targetPath: CardItem/CreatorMin
-      componentName: CreatorMin
-      modifyActive: 1
-      isActive: 1
-      modifyColor: 1
-      color: {r: 0.3773585, g: 0.3773585, b: 0.3773585, a: 1}
-      modifyFontSize: 1
-      fontSize: 14.67
-      modifySprite: 0
-      sprite: {fileID: 0}
-    - targetPath: CardItem/CreatorMin/CreatorAvatar
-      componentName: CreatorAvatar
-      modifyActive: 1
-      isActive: 1
-      modifyColor: 1
-      color: {r: 1, g: 1, b: 1, a: 1}
-      modifyFontSize: 0
-      fontSize: 14
-      modifySprite: 0
-      sprite: {fileID: 0}
-    - targetPath: CardItem/Login
-      componentName: Login
-      modifyActive: 1
-      isActive: 1
-      modifyColor: 1
-      color: {r: 1, g: 1, b: 1, a: 1}
-      modifyFontSize: 0
-      fontSize: 14
-      modifySprite: 1
-      sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-    - targetPath: CardItem/Login/Text (Legacy)
-      componentName: Text (Legacy)
-      modifyActive: 1
-      isActive: 1
-      modifyColor: 1
-      color: {r: 1, g: 1, b: 1, a: 1}
-      modifyFontSize: 1
       fontSize: 14
       modifySprite: 0
       sprite: {fileID: 0}

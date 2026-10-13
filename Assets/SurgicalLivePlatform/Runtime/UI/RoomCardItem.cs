@@ -133,7 +133,27 @@ namespace SurgicalLivePlatform.Runtime.UI
 
             SetText(roomname_txt, roomItem.name);
 
-            // 3. 在会人数
+            // 3. 在会人数//
+
+
+            /*
+             (o)
+(o)
+单目实时直播
+    live·默认高清摄像头推流
+
+单目录制视频推流
+    record·调取已有手术录像
+
+双目实时直播
+    liveStereo - 3D 双目立体直播
+
+双目录制视频推流
+    recordStereo - 3D 录像推流
+
+             
+             
+             */
             SetText(participant_txt, $"🔥 {roomItem.participant_count} 人在席");
 
             // 4. 复合型 UI 渲染 (Status & StreamType)
@@ -173,28 +193,7 @@ namespace SurgicalLivePlatform.Runtime.UI
 
             if (stream_type != null)
             {
-                // 如果后端未返回，默认做安全处理
-                string sType = string.IsNullOrEmpty(roomItem.stream_type) ? "LIVE" : roomItem.stream_type.ToUpper();
-                string stText = sType;
-                Color stBgColor = new Color(0.9f, 0.9f, 0.9f, 1f);
-                Color stTextColor = new Color(0.3f, 0.3f, 0.3f, 1f);
-
-                switch (sType)
-                {
-                    case "LIVE":
-                        stText = "实时直播 (LIVE)";
-                        // 颜色同 status 的 LIVE（浅绿色底 + 深绿色字）
-                        stBgColor = new Color(0.85f, 1f, 0.85f, 1f); 
-                        stTextColor = new Color(0.1f, 0.5f, 0.1f, 1f); 
-                        break;
-                    case "RECORD":
-                        stText = "录制推流 (RECORD)";
-                        // 颜色同 status 的 CREATED（浅蓝色底 + 深蓝色字）
-                        stBgColor = new Color(0.85f, 0.9f, 1f, 1f); 
-                        stTextColor = new Color(0.1f, 0.4f, 0.8f, 1f); 
-                        break;
-                }
-
+                var (stText, stBgColor, stTextColor) = ResolveStreamTypeBadge(roomItem.stream_type);
                 SetText(stream_type, stText);
                 SetTextColor(stream_type, stTextColor);
                 var streamBg = stream_type.GetComponent<Image>();
@@ -222,6 +221,39 @@ namespace SurgicalLivePlatform.Runtime.UI
                 rawImage.texture = await ImageLoader.LoadImageAsync(roomItem.cover_image_url);
             }
 
+        }
+
+        /// <summary>
+        /// 解析并映射流媒体类型角标 (liveStereo -> 3D双目立体直播, RECORD -> 双目录制 3D)
+        /// </summary>
+        public static (string text, Color bgColor, Color textColor) ResolveStreamTypeBadge(string rawStreamType)
+        {
+            if (string.IsNullOrWhiteSpace(rawStreamType))
+            {
+                return ("实时直播 (LIVE)", new Color(0.85f, 1f, 0.85f, 1f), new Color(0.1f, 0.5f, 0.1f, 1f));
+            }
+
+            string normalized = rawStreamType.Trim().ToUpperInvariant();
+            switch (normalized)
+            {
+                case "LIVESTEREO":
+                case "LIVE_STEREO":
+                    // 3D双目立体直播：高科技紫底 + 蓝紫文字
+                    return ("3D双目立体直播", new Color(0.92f, 0.88f, 1f, 1f), new Color(0.45f, 0.15f, 0.85f, 1f));
+
+                case "RECORD":
+                case "RECORD_STEREO":
+                case "RECORDSTEREO":
+                    // 双目录制 3D：浅蓝底 + 深蓝文字
+                    return ("双目录制 3D (3D RECORD)", new Color(0.85f, 0.9f, 1f, 1f), new Color(0.1f, 0.4f, 0.8f, 1f));
+
+                case "LIVE":
+                    // 实时直播：浅绿底 + 深绿文字
+                    return ("实时直播 (LIVE)", new Color(0.85f, 1f, 0.85f, 1f), new Color(0.1f, 0.5f, 0.1f, 1f));
+
+                default:
+                    return (rawStreamType, new Color(0.9f, 0.9f, 0.9f, 1f), new Color(0.3f, 0.3f, 0.3f, 1f));
+            }
         }
 
         private void ApplyStyle(string statusName)
