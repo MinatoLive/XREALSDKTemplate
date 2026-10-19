@@ -59,13 +59,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "recordStereo\xB73D"
+  m_text: "\u5B9E\u65F6\u76F4\u64AD live"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: eb016a52d9781cd4198a6f3d439ef64c, type: 2}
   m_sharedMaterial: {fileID: -4820834946685480198, guid: eb016a52d9781cd4198a6f3d439ef64c, type: 2}
@@ -167,7 +167,7 @@ RectTransform:
   m_GameObject: {fileID: 649331350445087251}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 3788073486325061809}
@@ -200,7 +200,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -320,7 +320,7 @@ RectTransform:
   m_GameObject: {fileID: 738730562169543786}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4688347893682930803}
@@ -328,8 +328,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -140.18, y: 259.385}
-  m_SizeDelta: {x: -452.96, y: -556.72}
+  m_AnchoredPosition: {x: -184.34999, y: 259.385}
+  m_SizeDelta: {x: -541.3, y: -556.7}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7515802132512447255
 CanvasRenderer:
@@ -353,7 +353,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 0.2627451, g: 0.90588236, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -397,14 +397,14 @@ RectTransform:
   m_GameObject: {fileID: 791416580951567616}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 7578764971095102334}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 591.9, y: -151.7}
+  m_AnchoredPosition: {x: 591.9, y: -185}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4787401310101516675
@@ -580,14 +580,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.85, g: 1, b: 0.85, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: bc23aa569cb541f4eacbc8d8f4d4f258, type: 3}
+  m_Sprite: {fileID: 21300000, guid: d7d76c29c7b916f4985e2ba1344a66aa, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -831,13 +831,14 @@ GameObject:
   - component: {fileID: 7397127262532858039}
   - component: {fileID: 5333468810345183432}
   - component: {fileID: 6683860725814440333}
+  - component: {fileID: 2206105598374182005}
   m_Layer: 0
   m_Name: DescText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &7397127262532858039
 RectTransform:
   m_ObjectHideFlags: 0
@@ -847,15 +848,15 @@ RectTransform:
   m_GameObject: {fileID: 2206105598374182004}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 7578764971095102334}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 233, y: -280.7}
-  m_SizeDelta: {x: 200, y: 50}
+  m_AnchoredPosition: {x: 305.2, y: -141}
+  m_SizeDelta: {x: 558.9, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &5333468810345183432
 CanvasRenderer:
@@ -885,7 +886,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\u8111\u819C\u7624\u5FAE\u521B\u5207\u9664\u793A\u6559\uFF0C\u5C55\u793A\u663E\u5FAE\u955C\u4E0B\u6DF1\u90E8\u7ED3\u6784\u89E3\u5256\u4E0E\u7CBE\u7EC6\u5265\u79BB\u64CD\u4F5C\u3002"
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: dcb9520bfa9b0f241a045841c21b23f9, type: 2}
   m_sharedMaterial: {fileID: 8644377905604998893, guid: dcb9520bfa9b0f241a045841c21b23f9, type: 2}
@@ -894,8 +895,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4278190080
-  m_fontColor: {r: 0, g: 0, b: 0, a: 1}
+    rgba: 4292465319
+  m_fontColor: {r: 0.6541473, g: 0.8223043, b: 0.8490566, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -912,8 +913,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 10
-  m_fontSizeBase: 10
+  m_fontSize: 16
+  m_fontSizeBase: 16
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -957,6 +958,19 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &2206105598374182005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2206105598374182004}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f9d0124cc2e07643ade6dd8c4ee6386, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: SurgicalLivePlatform.Runtime::SurgicalLivePlatform.Runtime.UI.UIMark
+  markName: DescText
 --- !u!1 &2284331753790607704
 GameObject:
   m_ObjectHideFlags: 0
@@ -992,8 +1006,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.4, y: 19.300014}
-  m_SizeDelta: {x: 677.1, y: 327.6}
+  m_AnchoredPosition: {x: -0.4, y: -1.4}
+  m_SizeDelta: {x: 677.1, y: 316.7}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4029000398602234480
 CanvasRenderer:
@@ -1220,8 +1234,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 362.09998, y: -87.255005}
-  m_SizeDelta: {x: 677.1, y: 50}
+  m_AnchoredPosition: {x: 362.09998, y: -106}
+  m_SizeDelta: {x: 677.1, y: 69.9}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7121064973426887032
 CanvasRenderer:
@@ -1278,15 +1292,15 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 28.4
-  m_fontSizeBase: 28.4
+  m_fontSize: 30
+  m_fontSizeBase: 30
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 0
+  m_fontStyle: 1
   m_HorizontalAlignment: 1
-  m_VerticalAlignment: 1024
+  m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
   m_characterHorizontalScale: 1
@@ -1449,7 +1463,7 @@ RectTransform:
   m_GameObject: {fileID: 3525543964137776721}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8737593531754548409}
@@ -1482,7 +1496,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 0.5058824, g: 0.93725497, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -1635,7 +1649,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\u76F4\u64AD\u4E2D"
+  m_text: "\u5DF2\u7ED3\u675F"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: dcb9520bfa9b0f241a045841c21b23f9, type: 2}
   m_sharedMaterial: {fileID: 8644377905604998893, guid: dcb9520bfa9b0f241a045841c21b23f9, type: 2}
@@ -1644,8 +1658,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4292472683
-  m_fontColor: {r: 0.41960788, g: 0.93725497, b: 0.85098046, a: 1}
+    rgba: 4289043318
+  m_fontColor: {r: 0.46242228, g: 0.6072476, b: 0.64779866, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -2022,6 +2036,7 @@ GameObject:
   - component: {fileID: 2100165996561410183}
   - component: {fileID: 4772821388548987673}
   - component: {fileID: 5153709324195532468}
+  - component: {fileID: 142396098399877187}
   m_Layer: 0
   m_Name: RoomCardItem
   m_TagString: Untagged
@@ -2057,7 +2072,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: 725, y: 600}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &2100165996561410183
 CanvasRenderer:
@@ -2109,7 +2124,54 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e61e53d4718c1884da8f082a94fbbb4d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: SurgicalLivePlatform.Runtime::SurgicalLivePlatform.Runtime.UI.RoomCardItem
+  liveStatusSprite: {fileID: 0}
+  createdStatusSprite: {fileID: 0}
+  endedStatusSprite: {fileID: 0}
   styleConfig: {fileID: 11400000, guid: 486a0b9ea5b9ab643a27f8208e7d3acb, type: 2}
+--- !u!114 &142396098399877187
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6544502774035598726}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
+  m_Navigation:
+    m_Mode: 3
+    m_WrapAround: 0
+    m_SelectOnUp: {fileID: 0}
+    m_SelectOnDown: {fileID: 0}
+    m_SelectOnLeft: {fileID: 0}
+    m_SelectOnRight: {fileID: 0}
+  m_Transition: 1
+  m_Colors:
+    m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
+    m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
+    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+    m_ColorMultiplier: 1
+    m_FadeDuration: 0.1
+  m_SpriteState:
+    m_HighlightedSprite: {fileID: 0}
+    m_PressedSprite: {fileID: 0}
+    m_SelectedSprite: {fileID: 0}
+    m_DisabledSprite: {fileID: 0}
+  m_AnimationTriggers:
+    m_NormalTrigger: Normal
+    m_HighlightedTrigger: Highlighted
+    m_PressedTrigger: Pressed
+    m_SelectedTrigger: Selected
+    m_DisabledTrigger: Disabled
+  m_Interactable: 1
+  m_TargetGraphic: {fileID: 4772821388548987673}
+  m_OnClick:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &8360934813764120156
 GameObject:
   m_ObjectHideFlags: 0

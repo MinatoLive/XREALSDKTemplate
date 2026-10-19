@@ -54,7 +54,7 @@ namespace SurgicalLivePlatform.Runtime.UI
         public Toggle filterLive;
         public Toggle filterCreated;
         public Toggle filterEnded;
-        private string currentFilterStatus = ""; // "" 表示全部
+        private string currentFilterStatus = "LIVE"; // 默认显示直播中
 
         private void Start()
         {
@@ -106,6 +106,11 @@ namespace SurgicalLivePlatform.Runtime.UI
         protected override void OnShow()
         {
             // 严格禁止在 OnShow 隐式触发房间列表网络刷新，防止进出房间路由切换时重复调用接口
+            // 确保进入大厅时默认同步为直播中 Toggle
+            if (filterLive != null && !filterLive.isOn)
+            {
+                filterLive.isOn = true;
+            }
         }
 
         private void OnDestroy()
@@ -273,15 +278,17 @@ namespace SurgicalLivePlatform.Runtime.UI
             if (toggleGroup == null) toggleGroup = gameObject.AddComponent<ToggleGroup>();
             toggleGroup.allowSwitchOff = false;
 
-            if (filterAll != null) 
-            {
-                filterAll.group = toggleGroup;
-                filterAll.onValueChanged.AddListener(isOn => { if (isOn) ApplyFilter(""); });
-            }
             if (filterLive != null) 
             {
                 filterLive.group = toggleGroup;
+                filterLive.isOn = true;
                 filterLive.onValueChanged.AddListener(isOn => { if (isOn) ApplyFilter("LIVE"); });
+            }
+            if (filterAll != null) 
+            {
+                filterAll.group = toggleGroup;
+                if (filterLive == null) filterAll.isOn = true;
+                filterAll.onValueChanged.AddListener(isOn => { if (isOn) ApplyFilter(""); });
             }
             if (filterCreated != null) 
             {

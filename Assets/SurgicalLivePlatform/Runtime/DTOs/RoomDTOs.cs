@@ -58,6 +58,36 @@ namespace SurgicalLivePlatform.Runtime.DTOs
     }
 
     /// <summary>
+    /// 房间预览图元数据结构
+    /// </summary>
+    [Serializable]
+    public class RoomPreview
+    {
+        public string image_url;
+        public string direct_url;
+        public string preset_key;
+        public string preset_title;
+        public string preset_subtitle;
+    }
+
+    /// <summary>
+    /// 手术室预设场景条目
+    /// </summary>
+    [Serializable]
+    public class RoomPresetItem
+    {
+        public int id;
+        public string key;
+        public string title;
+        public string subtitle;
+        public string tag;
+        public string badge;
+        public string spec;
+        public string procedure;
+        public string image_url;
+    }
+
+    /// <summary>
     /// 房间详细信息条目
     /// </summary>
     [Serializable]
@@ -67,6 +97,7 @@ namespace SurgicalLivePlatform.Runtime.DTOs
         public string name;
         public string description;
         public string cover_image_url;
+        public RoomPreview preview;
         public string creator_id;
         public RoomCreator creator;
         public int participant_count;
@@ -134,6 +165,14 @@ namespace SurgicalLivePlatform.Runtime.DTOs
         public int code;
         public string message;
         public RoomItem data;
+    }
+
+    [Serializable]
+    public class RoomPresetListWrapper
+    {
+        public int code;
+        public string message;
+        public List<RoomPresetItem> data;
     }
 
     [Serializable]

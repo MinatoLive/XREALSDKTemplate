@@ -2,12 +2,15 @@
     "name": "SurgicalLivePlatform.Example.Tests",
     "rootNamespace": "SurgicalLivePlatform.Example.Tests",
     "references": [
-        "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner",
         "SurgicalLivePlatform.Runtime",
         "SurgicalLivePlatform.Example.Runtime"
     ],
-    "includePlatforms": [],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": true,

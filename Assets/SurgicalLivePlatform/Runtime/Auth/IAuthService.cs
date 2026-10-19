@@ -27,6 +27,8 @@ namespace SurgicalLivePlatform.Runtime.Auth
         #region 模块 2: 房间生命周期与入会 (Room)
 
         Task<RoomList> GetRoomInfosAsync(int page = 1, int size = 10, string hospitalId = null, string departmentId = null, string status = null);
+        Task<List<RoomPresetItem>> GetRoomPresetsAsync();
+        Task<byte[]> GetRoomPreviewImageBytesAsync(string roomId);
         Task<RoomItem> GetRoomDetailAsync(string roomId);
         Task<RoomItem> CreateRoomAsync(CreateRoomRequest request);
         Task<RoomItem> UpdateRoomAsync(string roomId, UpdateRoomRequest request);

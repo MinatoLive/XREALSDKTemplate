@@ -316,8 +316,37 @@ namespace SurgicalLivePlatform.Example.Runtime.UI
 
         private void BindControlButtons()
         {
+            if (lobbyBackButton == null)
+            {
+                if (roomListRoot != null)
+                {
+                    var buttons = roomListRoot.GetComponentsInChildren<Button>(true);
+                    foreach (var b in buttons)
+                    {
+                        if (b.name == "Back" || b.name == "Btn_Back" || b.name == "Btn_LobbyBack")
+                        {
+                            lobbyBackButton = b;
+                            break;
+                        }
+                    }
+                }
+                if (lobbyBackButton == null && lobbyView != null)
+                {
+                    var buttons = lobbyView.GetComponentsInChildren<Button>(true);
+                    foreach (var b in buttons)
+                    {
+                        if (b.name == "Back" || b.name == "Btn_Back" || b.name == "Btn_LobbyBack")
+                        {
+                            lobbyBackButton = b;
+                            break;
+                        }
+                    }
+                }
+            }
+
             if (lobbyBackButton != null)
             {
+                lobbyBackButton.onClick.RemoveAllListeners();
                 lobbyBackButton.onClick.AddListener(OnLobbyBackClicked);
             }
             if (lobbyRefreshButton != null)

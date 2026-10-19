@@ -62,6 +62,16 @@ namespace SurgicalLivePlatform.Runtime.Network
         Task<RoomList> GetRoomInfosAsync(int page = 1, int size = 10, string hospitalId = null, string departmentId = null, string status = null);
 
         /// <summary>
+        /// 获取手术室预设场景及预览图列表
+        /// </summary>
+        Task<List<RoomPresetItem>> GetRoomPresetsAsync();
+
+        /// <summary>
+        /// 获取房间直连预览缩略图二进制数据 (接口 2.1.2)
+        /// </summary>
+        Task<byte[]> GetRoomPreviewImageBytesAsync(string roomId);
+
+        /// <summary>
         /// 获取目标房间的详细状态、属性和参与者数量等
         /// </summary>
         Task<RoomItem> GetRoomDetailAsync(string roomId);

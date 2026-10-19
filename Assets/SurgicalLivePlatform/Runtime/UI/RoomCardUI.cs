@@ -38,16 +38,26 @@ namespace SurgicalLivePlatform.Runtime.UI
                 return;
             }
 
-            // 基础信息绑定
-            if (roomNameText != null) roomNameText.text = string.IsNullOrEmpty(roomData.name) ? "未知房间" : roomData.name;
-            if (descriptionText != null) descriptionText.text = string.IsNullOrEmpty(roomData.description) ? "暂无描述" : roomData.description;
+            // 基础信息绑定 (优先绑定 2.1.1 预设 title 与 subtitle)
+            if (roomNameText != null)
+            {
+                roomNameText.text = roomData.preview != null && !string.IsNullOrEmpty(roomData.preview.preset_title)
+                    ? roomData.preview.preset_title
+                    : (string.IsNullOrEmpty(roomData.name) ? "达芬奇腔镜机器人间" : roomData.name);
+            }
+            if (descriptionText != null)
+            {
+                descriptionText.text = roomData.preview != null && !string.IsNullOrEmpty(roomData.preview.preset_subtitle)
+                    ? roomData.preview.preset_subtitle
+                    : (string.IsNullOrEmpty(roomData.description) ? "4K 3D 腹腔镜微创主视野 · 内窥镜立体视界" : roomData.description);
+            }
             if (participantCountText != null) participantCountText.text = $"🔥 {roomData.participant_count} 人在会";
             
             // 状态标签渲染
             if (statusText != null)
             {
                 string statusString = roomData.status;
-                if (statusString == "CREATED") statusText.text = "未开始";
+                if (statusString == "CREATED") statusText.text = "预约中";
                 else if (statusString == "LIVE") statusText.text = "直播中";
                 else if (statusString == "ENDED") statusText.text = "已结束";
                 else statusText.text = statusString;
@@ -67,12 +77,18 @@ namespace SurgicalLivePlatform.Runtime.UI
                     creatorNameText.text = "系统发起";
                 }
             }
-            Debug.Log($"异步加载封面图并处理失败回退:{roomData.cover_image_url}");
-            // 异步加载封面图并处理失败回退
-            await LoadCoverImageAsync(roomData.cover_image_url);
+            string primaryUrl = roomData.preview != null && !string.IsNullOrEmpty(roomData.preview.image_url)
+                ? roomData.preview.image_url
+                : roomData.cover_image_url;
+            string secondaryUrl = roomData.preview != null && !string.IsNullOrEmpty(roomData.preview.direct_url)
+                ? roomData.preview.direct_url
+                : (!string.IsNullOrEmpty(roomData.id) ? $"/api/v1/rooms/{roomData.id}/preview" : null);
+
+            Debug.Log($"[RoomCardUI] 异步加载封面图(含降级): primary={primaryUrl}, fallback={secondaryUrl}");
+            await LoadCoverImageAsync(primaryUrl, secondaryUrl);
         }
 
-        private async Task LoadCoverImageAsync(string url)
+        private async Task LoadCoverImageAsync(string primaryUrl, string secondaryUrl)
         {
             if (coverImage == null) return;
             
@@ -80,11 +96,7 @@ namespace SurgicalLivePlatform.Runtime.UI
             coverImage.texture = null;
             coverImage.color = Color.clear;
 
-            Texture2D tex = null;
-            if (!string.IsNullOrEmpty(url))
-            {
-                tex = await ImageLoader.LoadImageAsync(url);
-            }
+            Texture2D tex = await ImageLoader.LoadImageWithFallbackAsync(primaryUrl, secondaryUrl);
 
             if (tex != null)
             {

@@ -25,7 +25,7 @@ namespace SurgicalLivePlatform.Example
         [SerializeField] private float smoothSpeed = 8.0f;
 
         [Tooltip("角度死区（度）。当 UI 当前朝向与目标朝向夹角小于该值时，完全停止修改 Transform.rotation，彻底杜绝 Canvas 频繁脏标记与移动端掉帧")]
-        [SerializeField] private float angleDeadzone = 0.3f;
+        [SerializeField] private float angleDeadzone = 15f;
 
         [Header("方向与相机设置")]
         [Tooltip("是否锁定 Y 轴旋转（保持 UI 始终垂直于地面，仅水平方向追踪朝向）")]
@@ -162,8 +162,14 @@ namespace SurgicalLivePlatform.Example
                     continue;
                 }
 
-
                 Quaternion desiredRotation = Quaternion.LookRotation(forwardDir.normalized, upDir);
+
+                // 核心阈值判定：仅当当前朝向与目标朝向夹角超过死区（默认正负 15 度）时，才进行转向
+                float angleDiff = Quaternion.Angle(target.rotation, desiredRotation);
+                if (angleDiff <= angleDeadzone)
+                {
+                    continue;
+                }
 
                 if (!enableSmooth)
                 {
@@ -171,7 +177,7 @@ namespace SurgicalLivePlatform.Example
                     continue;
                 }
 
-                target.rotation = Quaternion.Lerp(target.rotation, desiredRotation, Time.deltaTime * smoothSpeed);
+                target.rotation = Quaternion.Lerp(target.rotation, desiredRotation, dt * smoothSpeed);
             }
         }
 

@@ -57,7 +57,7 @@ namespace SurgicalLivePlatform.Runtime.Services
 
             // 1. 异步启动信令连接
             // 注意: 生产环境应从统一的配置或环境变量中获取 WS 的基准地址
-            string wsUrl = $"ws://10.72.128.96:8081/api/v1/ws?roomId={roomId}";
+            string wsUrl = $"ws://api.surgery.local/api/v1/ws?roomId={roomId}";
             _ = _webSocketService.ConnectAsync(wsUrl, wsToken);
 
             // 2. 启动流媒体连接

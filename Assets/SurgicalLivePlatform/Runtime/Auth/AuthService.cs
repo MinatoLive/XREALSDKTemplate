@@ -197,6 +197,16 @@ namespace SurgicalLivePlatform.Runtime.Auth
             return await ExecuteWithRetryAsync(() => _apiClient.GetRoomInfosAsync(page, size, hospitalId, departmentId, status));
         }
 
+        public async Task<List<RoomPresetItem>> GetRoomPresetsAsync()
+        {
+            return await ExecuteWithRetryAsync(() => _apiClient.GetRoomPresetsAsync());
+        }
+
+        public async Task<byte[]> GetRoomPreviewImageBytesAsync(string roomId)
+        {
+            return await ExecuteWithRetryAsync(() => _apiClient.GetRoomPreviewImageBytesAsync(roomId));
+        }
+
         public async Task<RoomItem> GetRoomDetailAsync(string roomId)
         {
             return await ExecuteWithRetryAsync(() => _apiClient.GetRoomDetailAsync(roomId));

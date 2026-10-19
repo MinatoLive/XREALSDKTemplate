@@ -14,9 +14,33 @@ namespace SurgicalLivePlatform.Runtime.UI
         public static event System.Action<string, string> OnRoomJoinSuccess;
         public static event System.Action OnRoomLeave;
 
+        public static bool IsInRoom { get; private set; }
+        public static bool IsJoining { get; private set; }
+        public static string CurrentRoomId { get; private set; }
+
+        /// <summary>
+        /// 主动触发退房逻辑。
+        /// <para>解除入会互斥状态，清空当前 RoomId，联动重置卡片单选态，并对外派发 <see cref="OnRoomLeave"/> 事件。</para>
+        /// </summary>
         public static void TriggerRoomLeave()
         {
+            IsInRoom = false;
+            CurrentRoomId = null;
+            IsJoining = false;
+            RoomCardItem.ResetSelectedCard();
             OnRoomLeave?.Invoke();
+        }
+
+        /// <summary>
+        /// 重置入会状态机至初始待机态。
+        /// <para>用于网络故障或异常退出时，静默恢复状态机且不二次分发退房事件。</para>
+        /// </summary>
+        public static void ResetState()
+        {
+            IsInRoom = false;
+            CurrentRoomId = null;
+            IsJoining = false;
+            RoomCardItem.ResetSelectedCard();
         }
 
         private static RoomJoinController _instance;
@@ -69,6 +93,19 @@ namespace SurgicalLivePlatform.Runtime.UI
 
         public async void JoinRoom(string roomId)
         {
+            if (IsInRoom)
+            {
+                Toast.Show("已在房间中，请先退出当前房间", 1.5f);
+                return;
+            }
+
+            if (IsJoining)
+            {
+                Debug.LogWarning("[RoomJoinController] 正在加入房间中，请稍候...");
+                return;
+            }
+
+            IsJoining = true;
             try
             {
                 // 1. 获取房间详情 (模拟10s超时拦截应在 ApiClient 层实现，这里只做调用)
@@ -91,6 +128,10 @@ namespace SurgicalLivePlatform.Runtime.UI
                 {
                     throw new Exception("入会申请失败，服务器返回空数据");
                 }
+
+                IsInRoom = true;
+                CurrentRoomId = roomId;
+                IsJoining = false;
                 
                 // 采用 C# 事件解耦：触发事件，让外层（如 MeetManager）自行监听，彻底避免反向引用和反射
                 if (OnRoomJoinSuccess != null)
@@ -106,6 +147,10 @@ namespace SurgicalLivePlatform.Runtime.UI
             }
             catch (Exception ex)
             {
+                IsJoining = false;
+                IsInRoom = false;
+                CurrentRoomId = null;
+                RoomCardItem.ResetSelectedCard();
                 HandleJoinException(ex);
             }
         }

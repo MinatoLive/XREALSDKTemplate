@@ -5,30 +5,6 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 0
-    path: Assets/Scenes/test_HandsDemoScene.unity
-    guid: 9dec01bec53cf66449129f9880e56c56
-  - enabled: 0
-    path: Assets/SurgicalLivePlatform/Example/Scene/UserLogin.unity
-    guid: a3ea2b18c14b140489d3ca441dd1c685
-  - enabled: 0
-    path: Assets/SurgicalLivePlatform/Example/Scene/RoomLobbyScene.unity
-    guid: a8067e78bd9645e41b4192e2af75a428
-  - enabled: 0
-    path: Assets/Samples/XR Interaction Toolkit/3.3.2/Hands Interaction Demo/HandsDemoScene.unity
-    guid: 3ff35cecbcc52cc42945cf531638a60a
-  - enabled: 0
-    path: Assets/SurgicalLivePlatform/Scenes/null.unity
-    guid: 5e27c6f2b412210419af635a8aecf1dc
-  - enabled: 0
-    path: Assets/Samples/LiveKit SDK/2.1.0/Meet/Scenes/MeetApp.unity
-    guid: 2cda990e2423bbf4892e6590ba056729
-  - enabled: 0
-    path: Assets/Scenes/Main.unity
-    guid: 9a2135f89d814574586c9872e0c2836f
-  - enabled: 0
-    path: Assets/Honeti/ScifiBlueGUI/Scenes/UIScenee.unity
-    guid: 9f3068f6e4690d4418a461cbfbac525a
   - enabled: 1
     path: Assets/Scenes/Main2.unity
     guid: c9d3ba2a95065354e89732660c77b377

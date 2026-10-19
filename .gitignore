@@ -60,6 +60,7 @@ doc/doxygen/__pycache__
 workspace.code-workspace
 Logs
 UserSettings
+Reports
 conansync/conan/android.profile
 conansync/conan/linux.profile
 conansync/conan/macos.profile
@@ -76,3 +77,9 @@ com.xreal.xr.tar.gz
 /g3doc
 /AarExtract
 /ProjectSettings
+.utmp/RelWithDebInfo/6p6n4k6z/arm64-v8a/.cmake/api/v1/reply/index-2026-10-13T06-01-01-0587.json
+/.utmp
+/.utmp
+/Reports
+/Reports/Daily
+/Reports

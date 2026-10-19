@@ -24,6 +24,50 @@ namespace SurgicalLivePlatform.Example.Runtime.UI
         public Button loginButton;
         public Button exitButton;
 
+        [Header("Panel Switch Elements")]
+        public Button switchPatternLockButton;
+        public GameObject loginPanel;
+        public GameObject patternLockPanel;
+
+        private string _password = string.Empty;
+
+        public string password
+        {
+            get => passwordInput != null ? passwordInput.text : _password;
+            set
+            {
+                _password = value;
+                if (passwordInput != null)
+                {
+                    passwordInput.text = value;
+                }
+            }
+        }
+
+        public void ShowPatternLockPanel()
+        {
+            if (loginPanel != null)
+            {
+                loginPanel.SetActive(false);
+            }
+            if (patternLockPanel != null)
+            {
+                patternLockPanel.SetActive(true);
+            }
+        }
+
+        public void ShowLoginPanel()
+        {
+            if (patternLockPanel != null)
+            {
+                patternLockPanel.SetActive(false);
+            }
+            if (loginPanel != null)
+            {
+                loginPanel.SetActive(true);
+            }
+        }
+
         public event Action<string, string> OnLoginRequested;
         public event Action OnExitRequested;
 
@@ -45,6 +89,7 @@ namespace SurgicalLivePlatform.Example.Runtime.UI
             SurgicalLiveSDK.EnsureInitialized();
             AutoBindUIElements();
             InitializeUI();
+            ShowLoginPanel();
             BindEvents();
 
             // 自愈注入 Presenter
@@ -57,6 +102,7 @@ namespace SurgicalLivePlatform.Example.Runtime.UI
         protected override void OnShow()
         {
             InitializeUI();
+            ShowLoginPanel();
         }
 
         protected override void OnHide()
@@ -129,6 +175,58 @@ namespace SurgicalLivePlatform.Example.Runtime.UI
             {
                 exitButton = FindButtonByNameOrText("ExitButton", "退出", "exit");
             }
+
+            if (switchPatternLockButton == null)
+            {
+                switchPatternLockButton = FindButtonByNameOrText("PatternLockPanelView", "viewPsd", "切换图案密码", "pattern");
+            }
+
+            if (loginPanel == null)
+            {
+                Transform t = transform.Find("UI Poke Components/Login");
+                if (t != null)
+                {
+                    loginPanel = t.gameObject;
+                }
+                else
+                {
+                    var rects = GetComponentsInChildren<RectTransform>(true);
+                    foreach (var r in rects)
+                    {
+                        if (r.gameObject != gameObject && r.gameObject.name.Equals("Login", StringComparison.OrdinalIgnoreCase))
+                        {
+                            loginPanel = r.gameObject;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (patternLockPanel == null)
+            {
+                Transform t = transform.Find("UI Poke Components/PatternLockPanel");
+                if (t != null)
+                {
+                    patternLockPanel = t.gameObject;
+                }
+                else
+                {
+                    var lockUI = GetComponentInChildren<PatternLockUI>(true);
+                    if (lockUI != null)
+                    {
+                        patternLockPanel = lockUI.gameObject;
+                    }
+                }
+            }
+
+            if (patternLockPanel != null)
+            {
+                var lockUI = patternLockPanel.GetComponent<PatternLockUI>();
+                if (lockUI != null && lockUI.loginUIController == null)
+                {
+                    lockUI.loginUIController = this;
+                }
+            }
         }
 
         /// <summary>
@@ -187,6 +285,11 @@ namespace SurgicalLivePlatform.Example.Runtime.UI
                 exitButton.onClick.AddListener(OnExitButtonClicked);
             }
 
+            if (switchPatternLockButton != null)
+            {
+                switchPatternLockButton.onClick.AddListener(ShowPatternLockPanel);
+            }
+
             EventManager.AddListener(EventId.OnLoginButtonClicked, HandleLoginEvent);
             EventManager.AddListener(EventId.OnExitButtonClicked, HandleExitEvent);
 
@@ -213,6 +316,11 @@ namespace SurgicalLivePlatform.Example.Runtime.UI
             if (exitButton != null)
             {
                 exitButton.onClick.RemoveListener(OnExitButtonClicked);
+            }
+
+            if (switchPatternLockButton != null)
+            {
+                switchPatternLockButton.onClick.RemoveListener(ShowPatternLockPanel);
             }
 
             EventManager.RemoveListener(EventId.OnLoginButtonClicked, HandleLoginEvent);

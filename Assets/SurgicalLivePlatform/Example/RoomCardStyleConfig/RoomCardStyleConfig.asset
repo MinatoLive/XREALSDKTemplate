@@ -81,11 +81,11 @@ MonoBehaviour:
     - targetPath: DescText
       componentName: DescText
       modifyActive: 1
-      isActive: 0
+      isActive: 1
       modifyColor: 1
-      color: {r: 0, g: 0, b: 0, a: 1}
+      color: {r: 0.6541473, g: 0.8223043, b: 0.8490566, a: 1}
       modifyFontSize: 1
-      fontSize: 10
+      fontSize: 16
       modifySprite: 0
       sprite: {fileID: 0}
     - targetPath: PartText
@@ -349,11 +349,11 @@ MonoBehaviour:
     - targetPath: DescText
       componentName: DescText
       modifyActive: 1
-      isActive: 0
+      isActive: 1
       modifyColor: 1
-      color: {r: 0, g: 0, b: 0, a: 1}
+      color: {r: 0.6541473, g: 0.8223043, b: 0.8490566, a: 1}
       modifyFontSize: 1
-      fontSize: 10
+      fontSize: 16
       modifySprite: 0
       sprite: {fileID: 0}
     - targetPath: PartText

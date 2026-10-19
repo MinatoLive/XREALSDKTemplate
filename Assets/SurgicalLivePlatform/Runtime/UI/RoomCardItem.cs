@@ -20,7 +20,7 @@ namespace SurgicalLivePlatform.Runtime.UI
         private GameObject status;
         private GameObject stream_type;
         private GameObject started_at;
-        private Button Login_btn;
+        // Removed Login_btn; root Button will be used
 
         [Header("Global Config")]
         [Tooltip("如果分配了此配置文件，运行后将优先加载配置文件的样式设置。")]
@@ -30,6 +30,19 @@ namespace SurgicalLivePlatform.Runtime.UI
         public RoomItem BoundRoom => currentRoomItem;
         
         private static RoomCardItem currentSelectedCard;
+
+        /// <summary>
+        /// 全局重置当前选中的房间卡片高亮选中态。
+        /// <para>常用于用户退出房间、入会网络超时或发生异常时，安全回滚列表卡片的视觉表现。</para>
+        /// </summary>
+        public static void ResetSelectedCard()
+        {
+            if (currentSelectedCard != null)
+            {
+                currentSelectedCard.ApplyStyle("unclick");
+                currentSelectedCard = null;
+            }
+        }
 
         private void Awake()
         {
@@ -56,16 +69,12 @@ namespace SurgicalLivePlatform.Runtime.UI
             stream_type = GetNode("stream_type");
             started_at = GetNode("started_at");
             roomname_txt = GetNode("NameText");
-            var loginBtnObj = GetNode("Login_btn");
-            if (loginBtnObj != null)
+            // Bind root button click instead of child Login_btn
+            var rootBtn = GetComponent<Button>();
+            if (rootBtn != null)
             {
-                Login_btn = loginBtnObj.GetComponent<Button>();
-            }
-
-            if (Login_btn != null)
-            {
-                Login_btn.onClick.RemoveAllListeners();
-                Login_btn.onClick.AddListener(OnLoginButtonClicked);
+                rootBtn.onClick.RemoveAllListeners();
+                rootBtn.onClick.AddListener(OnRootClicked);
             }
         }
 
@@ -77,14 +86,17 @@ namespace SurgicalLivePlatform.Runtime.UI
             }
         }
 
-        private void OnLoginButtonClicked()
+        private void OnRootClicked()
         {
             if (currentRoomItem == null) return;
 
             // 拦截不可进的房间（只允许 LIVE）
             if (currentRoomItem.status != "LIVE")
             {
-                Debug.LogWarning($"[RoomCardItem] 房间状态为 {currentRoomItem.status}，当前不允许进入。");
+                string reason = $"房间状态为 {currentRoomItem.status}，当前不允许进入。";
+                Debug.Log($"不可加入原因: {reason}");
+                // Show toast for user feedback
+                Toast.Show(reason, 2.0f);
             }
             else
             {

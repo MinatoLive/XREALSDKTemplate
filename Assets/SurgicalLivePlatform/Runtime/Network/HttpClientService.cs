@@ -1,3 +1,4 @@
+using SurgicalLivePlatform.Runtime.Config;
 using SurgicalLivePlatform.Runtime.DTOs;
 using System;
 using System.Collections.Generic;
@@ -19,7 +20,42 @@ namespace SurgicalLivePlatform.Runtime.Network
 
         private readonly HttpClient _httpClient;
         private readonly INetworkEventDispatcher _dispatcher;
-        private const string BaseUrl = "http://10.72.128.96:8081/api/v1";
+        // 全局单例实例
+        public static HttpClientService Instance { get; private set; }
+
+        /// <summary>
+        /// 后端业务 API 服务器基地址，统一委托自 AuthConfig
+        /// </summary>
+        public static string BaseApiUrl
+        {
+            get => AuthConfig.ApiBaseUrl;
+            set => AuthConfig.ApiBaseUrl = value;
+        }
+
+        /// <summary>
+        /// 前端静态资源服务器基地址，统一委托自 AuthConfig
+        /// </summary>
+        public static string BaseStaticUrl
+        {
+            get => AuthConfig.StaticAssetBaseUrl;
+            set => AuthConfig.StaticAssetBaseUrl = value;
+        }
+
+        public static string HostAuthority
+        {
+            get
+            {
+                try
+                {
+                    var uri = new Uri(BaseApiUrl);
+                    return uri.GetLeftPart(UriPartial.Authority);
+                }
+                catch
+                {
+                    return string.Empty;
+                }
+            }
+        }
 
         #endregion
 
@@ -30,6 +66,8 @@ namespace SurgicalLivePlatform.Runtime.Network
         /// </summary>
         public HttpClientService(INetworkEventDispatcher dispatcher = null, HttpMessageHandler handler = null)
         {
+            // Set the singleton instance
+            Instance = this;
             if (handler != null)
             {
                 _httpClient = new HttpClient(handler);
@@ -86,8 +124,9 @@ namespace SurgicalLivePlatform.Runtime.Network
         }
 
         /// <summary>
-        /// 设置或清除全局 HTTP 请求头中的 Bearer Token
+        /// 设置或注销全局 HTTP 请求头中的 Bearer Token。
         /// </summary>
+        /// <param name="token">访问令牌字符串；若传入空则清除请求头认证</param>
         public void SetAccessToken(string token)
         {
             _accessToken = token;
@@ -101,9 +140,20 @@ namespace SurgicalLivePlatform.Runtime.Network
             }
         }
 
+        /// <summary>
+        /// 底层 HTTP 请求统一执行调度流水线。
+        /// <para>包含：路由守卫校验、超时事件分发、网络异常捕获及请求参数脱敏上报。</para>
+        /// </summary>
+        /// <param name="requestFunc">具体的 HttpClient 异步请求委托</param>
+        /// <param name="method">HTTP 方法标识 (GET/POST/PUT/DELETE)</param>
+        /// <param name="endpoint">API 相对路径端点</param>
+        /// <param name="payload">请求载荷 JSON 字符串，供异常诊断脱敏上报</param>
+        /// <returns>返回反序列化前的响应 Body 原始字符串</returns>
+        /// <exception cref="UnauthorizedAccessException">未登录且非匿名白名单端点时的拦截异常</exception>
+        /// <exception cref="Exception">网络超时(408)或传输异常</exception>
         private async Task<string> ExecuteRequestAsync(Func<Task<HttpResponseMessage>> requestFunc, string method, string endpoint, string payload)
         {
-            string url = $"{BaseUrl}{endpoint}";
+            string url = $"{BaseApiUrl}{endpoint}";
             
             // 路由请求守卫拦截：未登录且非白名单接口，禁止向受保护端点发送网络请求
             if (!IsAnonymousEndpoint(endpoint) && !HasValidAccessToken)
@@ -152,24 +202,24 @@ namespace SurgicalLivePlatform.Runtime.Network
         {
             string json = payload != null ? JsonUtility.ToJson(payload) : "{}";
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            return ExecuteRequestAsync(() => _httpClient.PostAsync($"{BaseUrl}{endpoint}", content), "POST", endpoint, json);
+            return ExecuteRequestAsync(() => _httpClient.PostAsync($"{BaseApiUrl}{endpoint}", content), "POST", endpoint, json);
         }
 
         private Task<string> GetRawAsync(string endpoint)
         {
-            return ExecuteRequestAsync(() => _httpClient.GetAsync($"{BaseUrl}{endpoint}"), "GET", endpoint, null);
+            return ExecuteRequestAsync(() => _httpClient.GetAsync($"{BaseApiUrl}{endpoint}"), "GET", endpoint, null);
         }
 
         private Task<string> PutRawAsync(string endpoint, object payload)
         {
             string json = payload != null ? JsonUtility.ToJson(payload) : "{}";
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            return ExecuteRequestAsync(() => _httpClient.PutAsync($"{BaseUrl}{endpoint}", content), "PUT", endpoint, json);
+            return ExecuteRequestAsync(() => _httpClient.PutAsync($"{BaseApiUrl}{endpoint}", content), "PUT", endpoint, json);
         }
 
         private Task<string> DeleteRawAsync(string endpoint)
         {
-            return ExecuteRequestAsync(() => _httpClient.DeleteAsync($"{BaseUrl}{endpoint}"), "DELETE", endpoint, null);
+            return ExecuteRequestAsync(() => _httpClient.DeleteAsync($"{BaseApiUrl}{endpoint}"), "DELETE", endpoint, null);
         }
 
         private async Task<string> HandleResponseAsync(string endpoint, HttpResponseMessage response)
@@ -289,6 +339,23 @@ namespace SurgicalLivePlatform.Runtime.Network
             var wrapper = JsonUtility.FromJson<RoomListWrapper>(json);
             if (wrapper.code != 200) throw new Exception($"API Error: {wrapper.message}");
             return wrapper.data;
+        }
+
+        public async Task<List<RoomPresetItem>> GetRoomPresetsAsync()
+        {
+            string json = await GetRawAsync("/rooms/presets");
+            var wrapper = JsonUtility.FromJson<RoomPresetListWrapper>(json);
+            if (wrapper == null) throw new Exception("API Error: 返回的手术室预设数据为空或无法解析");
+            if (wrapper.code != 200) throw new Exception($"API Error: {wrapper.message}");
+            return wrapper.data;
+        }
+
+        public async Task<byte[]> GetRoomPreviewImageBytesAsync(string roomId)
+        {
+            string endpoint = $"/rooms/{roomId}/preview";
+            var response = await _httpClient.GetAsync($"{BaseApiUrl}{endpoint}");
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadAsByteArrayAsync();
         }
 
         public async Task<RoomItem> GetRoomDetailAsync(string roomId)
@@ -436,7 +503,7 @@ namespace SurgicalLivePlatform.Runtime.Network
             imageContent.Headers.ContentType = MediaTypeHeaderValue.Parse("image/jpeg");
             content.Add(imageContent, "file", fileName);
 
-            var response = await _httpClient.PostAsync($"{BaseUrl}/users/me/avatar", content);
+            var response = await _httpClient.PostAsync($"{BaseApiUrl}/users/me/avatar", content);
             string json = await HandleResponseAsync("/users/me/avatar", response);
             
             var wrapper = JsonUtility.FromJson<GenericResponseWrapper>(json);
