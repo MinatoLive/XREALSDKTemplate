@@ -6,7 +6,7 @@
 //   • 接近临界值 (NearEdge)    – 从透明向亮橙色连续渐变加深
 //   • 超过临界值 (OutOfFrustum)– 显示为不透明红色 (Alpha = 1)
 //   • 未被追踪 (NotTracked)    – 显示为橙色半透明警示态 (Alpha ≈ 0.6)
-// 同时支持保留 TextMeshProUGUI 引用作为可选调试载体。
+// 可选调试 Text 会输出左右手的视锥状态与手部模型状态（显示/隐藏）。
 
 using System;
 using System.Collections.Generic;
@@ -42,6 +42,13 @@ namespace SurgicalLivePlatform
         [Header("Tracking Space")]
         [Tooltip("XR Tracking Origin Transform（若留空则自动取 Camera 父级 Camera Offset）")]
         [SerializeField] private Transform trackingOrigin;
+
+        [Header("Hand Model References (Optional)")]
+        [Tooltip("左手 3D 模型根节点或掌心 Transform（若绑定则优先根据模型在世界空间的实际渲染位置判定视口）")]
+        [SerializeField] private Transform leftHandModelTransform;
+
+        [Tooltip("右手 3D 模型根节点或掌心 Transform（若绑定则优先根据模型在世界空间的实际渲染位置判定视口）")]
+        [SerializeField] private Transform rightHandModelTransform;
 
         // ---------- 图像预警组件引用 ----------
         [Header("Image Warning UI References")]
@@ -90,12 +97,25 @@ namespace SurgicalLivePlatform
 
         private HandFrustumState _lastLeftState = (HandFrustumState)(-1);
         private HandFrustumState _lastRightState = (HandFrustumState)(-1);
-        private bool _lastSubsystemReady = false;
+        private bool _lastLeftModelVisible;
+        private bool _lastRightModelVisible;
 
         public Transform TrackingOrigin
         {
             get => trackingOrigin;
             set => trackingOrigin = value;
+        }
+
+        public Transform LeftHandModelTransform
+        {
+            get => leftHandModelTransform;
+            set => leftHandModelTransform = value;
+        }
+
+        public Transform RightHandModelTransform
+        {
+            get => rightHandModelTransform;
+            set => rightHandModelTransform = value;
         }
 
         public Image LeftHandWarningImage
@@ -158,42 +178,82 @@ namespace SurgicalLivePlatform
 
             EnsureSubsystem();
 
-            if (_handSubsystem == null || !_handSubsystem.running)
-            {
-                if (_lastSubsystemReady)
-                {
-                    _lastSubsystemReady = false;
-                    ShowStatusMessage("[HandFrustumMonitor] 等待 XRHandSubsystem 就绪...");
-                }
+            bool hasModels = (leftHandModelTransform != null && leftHandModelTransform.gameObject.activeInHierarchy) ||
+                             (rightHandModelTransform != null && rightHandModelTransform.gameObject.activeInHierarchy);
 
-                // 子系统未就绪时，按未追踪警示色处理
+            bool subsystemReady = _handSubsystem != null && _handSubsystem.running;
+
+            if (!subsystemReady && !hasModels)
+            {
+                // 子系统与手部模型均未就绪时，按未追踪警示色处理
                 UpdateWarningImage(leftHandWarningImage, notTrackedColor, ref _currentLeftColor);
                 UpdateWarningImage(rightHandWarningImage, notTrackedColor, ref _currentRightColor);
+                UpdateDebugText(HandFrustumState.NotTracked, HandFrustumState.NotTracked, false, false);
                 return;
             }
 
-            _lastSubsystemReady = true;
+            XRHand leftHand = subsystemReady ? _handSubsystem.leftHand : default;
+            XRHand rightHand = subsystemReady ? _handSubsystem.rightHand : default;
+
+            bool leftModelVisible = IsHandModelVisible(leftHand, leftHandModelTransform, subsystemReady);
+            bool rightModelVisible = IsHandModelVisible(rightHand, rightHandModelTransform, subsystemReady);
 
             // 1. 评估左右手目标颜色并执行平滑插值渲染
-            Color targetLeftColor = EvaluateHandColor(_handSubsystem.leftHand);
-            Color targetRightColor = EvaluateHandColor(_handSubsystem.rightHand);
+            Color targetLeftColor = EvaluateHandColor(leftHand, leftHandModelTransform);
+            Color targetRightColor = EvaluateHandColor(rightHand, rightHandModelTransform);
 
             UpdateWarningImage(leftHandWarningImage, targetLeftColor, ref _currentLeftColor);
             UpdateWarningImage(rightHandWarningImage, targetRightColor, ref _currentRightColor);
 
-            // 2. 若存在可选调试 Text，基于状态脏标记执行状态文本更新
-            if (leftHandText != null || rightHandText != null)
-            {
-                HandFrustumState curLeft = EvaluateHandState(_handSubsystem.leftHand);
-                HandFrustumState curRight = EvaluateHandState(_handSubsystem.rightHand);
+            // 2. 更新左右手状态文本（含手部模型状态）
+            UpdateDebugText(
+                EvaluateHandState(leftHand, leftHandModelTransform),
+                EvaluateHandState(rightHand, rightHandModelTransform),
+                leftModelVisible,
+                rightModelVisible);
+        }
 
-                if (curLeft != _lastLeftState || curRight != _lastRightState)
-                {
-                    _lastLeftState = curLeft;
-                    _lastRightState = curRight;
-                    ApplyDebugTextUpdate(curLeft, curRight);
-                }
+        /// <summary>
+        /// 手部模型状态：优先使用 XR Hands 官方追踪状态，未运行子系统时回退到模型节点激活状态。
+        /// </summary>
+        private static bool IsHandModelVisible(XRHand hand, Transform handModelTransform, bool subsystemReady)
+        {
+            if (subsystemReady)
+            {
+                return hand.isTracked;
             }
+
+            return handModelTransform != null && handModelTransform.gameObject.activeInHierarchy;
+        }
+
+        /// <summary>
+        /// 状态或模型显隐变化时才刷新文本，避免每帧字符串分配。
+        /// </summary>
+        private void UpdateDebugText(
+            HandFrustumState leftState,
+            HandFrustumState rightState,
+            bool leftModelVisible,
+            bool rightModelVisible)
+        {
+            if (leftHandText == null && rightHandText == null)
+            {
+                return;
+            }
+
+            if (leftState == _lastLeftState &&
+                rightState == _lastRightState &&
+                leftModelVisible == _lastLeftModelVisible &&
+                rightModelVisible == _lastRightModelVisible)
+            {
+                return;
+            }
+
+            _lastLeftState = leftState;
+            _lastRightState = rightState;
+            _lastLeftModelVisible = leftModelVisible;
+            _lastRightModelVisible = rightModelVisible;
+
+            ApplyDebugTextUpdate(leftState, rightState, leftModelVisible, rightModelVisible);
         }
 
         /// <summary>
@@ -234,23 +294,66 @@ namespace SurgicalLivePlatform
         }
 
         /// <summary>
-        /// 计算单手相对于相机的当前目标预警颜色。
+        /// 纯逻辑计算：解析单手的目标世界坐标。
+        /// 优先级：手部模型 Transform (若已激活) > 关节局部坐标转换世界坐标。
         /// </summary>
-        private Color EvaluateHandColor(XRHand hand)
+        public static bool TryResolveTargetWorldPosition(
+            Transform handModelTransform,
+            bool hasJointPose,
+            Vector3 jointLocalPos,
+            Transform origin,
+            out Vector3 resolvedPos)
         {
-            if (!hand.isTracked)
+            if (handModelTransform != null && handModelTransform.gameObject.activeInHierarchy)
             {
-                return notTrackedColor;
+                resolvedPos = handModelTransform.position;
+                return true;
             }
 
-            XRHandJoint wristJoint = hand.GetJoint(XRHandJointID.Wrist);
-            if (!wristJoint.TryGetPose(out Pose wristPose))
+            if (hasJointPose)
             {
-                return notTrackedColor;
+                resolvedPos = CalculateWorldPosition(jointLocalPos, origin);
+                return true;
+            }
+
+            resolvedPos = Vector3.zero;
+            return false;
+        }
+
+        /// <summary>
+        /// 计算单手相对于相机的当前目标预警颜色。
+        /// 优先采用手部模型 Transform，如未绑定则优先取 Palm（掌心）关节，避免手腕在下边界切边误报红色。
+        /// </summary>
+        private Color EvaluateHandColor(XRHand hand, Transform handModelTransform)
+        {
+            bool hasJoint = false;
+            Vector3 jointLocalPos = Vector3.zero;
+
+            if (hand != null && hand.isTracked)
+            {
+                XRHandJoint palmJoint = hand.GetJoint(XRHandJointID.Palm);
+                if (palmJoint.TryGetPose(out Pose palmPose))
+                {
+                    hasJoint = true;
+                    jointLocalPos = palmPose.position;
+                }
+                else
+                {
+                    XRHandJoint wristJoint = hand.GetJoint(XRHandJointID.Wrist);
+                    if (wristJoint.TryGetPose(out Pose wristPose))
+                    {
+                        hasJoint = true;
+                        jointLocalPos = wristPose.position;
+                    }
+                }
             }
 
             Transform origin = ResolveTrackingOrigin();
-            Vector3 worldPos = CalculateWorldPosition(wristPose.position, origin);
+            if (!TryResolveTargetWorldPosition(handModelTransform, hasJoint, jointLocalPos, origin, out Vector3 worldPos))
+            {
+                return notTrackedColor;
+            }
+
             Vector3 viewportPos = _mainCamera.WorldToViewportPoint(worldPos);
 
             return CalculateHandWarningColor(
@@ -267,21 +370,36 @@ namespace SurgicalLivePlatform
         /// <summary>
         /// 评估单手相对于相机的视锥几何状态（用于调试文本）。
         /// </summary>
-        private HandFrustumState EvaluateHandState(XRHand hand)
+        private HandFrustumState EvaluateHandState(XRHand hand, Transform handModelTransform)
         {
-            if (!hand.isTracked)
-            {
-                return HandFrustumState.NotTracked;
-            }
+            bool hasJoint = false;
+            Vector3 jointLocalPos = Vector3.zero;
 
-            XRHandJoint wristJoint = hand.GetJoint(XRHandJointID.Wrist);
-            if (!wristJoint.TryGetPose(out Pose wristPose))
+            if (hand != null && hand.isTracked)
             {
-                return HandFrustumState.NotTracked;
+                XRHandJoint palmJoint = hand.GetJoint(XRHandJointID.Palm);
+                if (palmJoint.TryGetPose(out Pose palmPose))
+                {
+                    hasJoint = true;
+                    jointLocalPos = palmPose.position;
+                }
+                else
+                {
+                    XRHandJoint wristJoint = hand.GetJoint(XRHandJointID.Wrist);
+                    if (wristJoint.TryGetPose(out Pose wristPose))
+                    {
+                        hasJoint = true;
+                        jointLocalPos = wristPose.position;
+                    }
+                }
             }
 
             Transform origin = ResolveTrackingOrigin();
-            Vector3 worldPos = CalculateWorldPosition(wristPose.position, origin);
+            if (!TryResolveTargetWorldPosition(handModelTransform, hasJoint, jointLocalPos, origin, out Vector3 worldPos))
+            {
+                return HandFrustumState.NotTracked;
+            }
+
             Vector3 viewportPos = _mainCamera.WorldToViewportPoint(worldPos);
 
             return EvaluateViewportPosition(viewportPos, edgeDistThreshold);
@@ -392,16 +510,22 @@ namespace SurgicalLivePlatform
         }
 
         /// <summary>
-        /// （可选调试备用）更新调试文本。
+        /// （可选调试备用）更新调试文本，输出视锥状态与手部模型状态。
         /// </summary>
-        private void ApplyDebugTextUpdate(HandFrustumState leftState, HandFrustumState rightState)
+        private void ApplyDebugTextUpdate(
+            HandFrustumState leftState,
+            HandFrustumState rightState,
+            bool leftModelVisible,
+            bool rightModelVisible)
         {
+            string leftStateText = FormatHandState("左手", leftState, leftModelVisible);
+            string rightStateText = FormatHandState("右手", rightState, rightModelVisible);
             bool isSharedText = leftHandText != null && leftHandText == rightHandText;
 
             if (isSharedText)
             {
                 leftHandText.gameObject.SetActive(true);
-                leftHandText.text = $"左手: {GetStateString(leftState)} | 右手: {GetStateString(rightState)}";
+                leftHandText.text = $"{leftStateText} | {rightStateText}";
                 leftHandText.color = GetStateColor(leftState == HandFrustumState.OutOfFrustum || rightState == HandFrustumState.OutOfFrustum ? HandFrustumState.OutOfFrustum : leftState);
                 return;
             }
@@ -409,16 +533,21 @@ namespace SurgicalLivePlatform
             if (leftHandText != null)
             {
                 leftHandText.gameObject.SetActive(true);
-                leftHandText.text = $"左手: {GetStateString(leftState)}";
+                leftHandText.text = leftStateText;
                 leftHandText.color = GetStateColor(leftState);
             }
 
             if (rightHandText != null)
             {
                 rightHandText.gameObject.SetActive(true);
-                rightHandText.text = $"右手: {GetStateString(rightState)}";
+                rightHandText.text = rightStateText;
                 rightHandText.color = GetStateColor(rightState);
             }
+        }
+
+        private static string FormatHandState(string label, HandFrustumState state, bool modelVisible)
+        {
+            return $"{label}: {GetStateString(state)} | 模型: {(modelVisible ? "显示" : "隐藏")}";
         }
 
         private static string GetStateString(HandFrustumState state)

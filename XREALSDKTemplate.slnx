@@ -1,11 +1,12 @@
 ﻿<Solution>
   <Project Path="Unity.XR.Interaction.Toolkit.Samples.Hands.csproj" />
+  <Project Path="SurgicalLivePlatform.Tests.Editor.csproj" />
+  <Project Path="SurgicalLivePlatform.Scripts.csproj" />
   <Project Path="Unity.XR.Interaction.Toolkit.Samples.SpatialKeyboard.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
   <Project Path="SurgicalLivePlatform.Runtime.csproj" />
   <Project Path="Unity.XR.XREAL.csproj" />
   <Project Path="Unity.XR.Hands.Samples.VisualizerSample.csproj" />
-  <Project Path="Assembly-CSharp-Editor.csproj" />
   <Project Path="Unity.XR.Interaction.Toolkit.Samples.DeviceSimulator.csproj" />
   <Project Path="Unity.XR.Interaction.Toolkit.Samples.StarterAssets.csproj" />
   <Project Path="Unity.XR.Hands.Samples.HandCapture.csproj" />
@@ -13,6 +14,7 @@
   <Project Path="Unity.XR.Interaction.Toolkit.Samples.Hands.Editor.csproj" />
   <Project Path="Unity.XR.Interaction.Toolkit.Samples.SpatialKeyboard.Editor.csproj" />
   <Project Path="Unity.XR.Hands.Samples.HandCapture.Editor.csproj" />
+  <Project Path="Assembly-CSharp-Editor.csproj" />
   <Project Path="Unity.XR.Hands.Samples.Gestures.csproj" />
   <Project Path="Unity.XR.Hands.Samples.Gestures.Editor.csproj" />
   <Project Path="SurgicalLivePlatform.Example.Runtime.csproj" />

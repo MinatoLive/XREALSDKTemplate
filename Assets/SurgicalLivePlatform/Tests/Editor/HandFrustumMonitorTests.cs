@@ -133,5 +133,73 @@ namespace SurgicalLivePlatform.Tests
             Assert.AreEqual(0.5f, result.a, 0.05f);
             Assert.AreEqual(nearEdge.r, result.r, 0.05f);
         }
+
+        [Test]
+        public void TryResolveTargetPosition_WithActiveHandModel_ReturnsModelPosition()
+        {
+            var go = new GameObject("HandModel");
+            go.transform.position = new Vector3(0.2f, 1.5f, 0.8f);
+
+            bool success = HandFrustumMonitor.TryResolveTargetWorldPosition(
+                go.transform,
+                hasJointPose: false,
+                jointLocalPos: Vector3.zero,
+                origin: null,
+                out Vector3 resolvedPos
+            );
+
+            Assert.IsTrue(success);
+            Assert.AreEqual(new Vector3(0.2f, 1.5f, 0.8f), resolvedPos);
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void TryResolveTargetPosition_WithInactiveHandModel_FallsBackToJoint()
+        {
+            var go = new GameObject("HandModel");
+            go.SetActive(false);
+            go.transform.position = new Vector3(0.2f, 1.5f, 0.8f);
+
+            Vector3 jointLocal = new Vector3(0.1f, 0.2f, 0.3f);
+            bool success = HandFrustumMonitor.TryResolveTargetWorldPosition(
+                go.transform,
+                hasJointPose: true,
+                jointLocalPos: jointLocal,
+                origin: null,
+                out Vector3 resolvedPos
+            );
+
+            Assert.IsTrue(success);
+            Assert.AreEqual(jointLocal, resolvedPos);
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void TryResolveTargetPosition_NoModelAndNoJoint_ReturnsFalse()
+        {
+            bool success = HandFrustumMonitor.TryResolveTargetWorldPosition(
+                null,
+                hasJointPose: false,
+                jointLocalPos: Vector3.zero,
+                origin: null,
+                out Vector3 resolvedPos
+            );
+
+            Assert.IsFalse(success);
+        }
+
+        [Test]
+        public void EvaluateViewportPosition_WhenWristOutsideBottom_PalmInside_PalmGivesInside()
+        {
+            // Wrist at bottom out of view (y = -0.05f)
+            Vector3 wristViewport = new Vector3(0.5f, -0.05f, 1.0f);
+            var wristState = HandFrustumMonitor.EvaluateViewportPosition(wristViewport, DefaultThreshold);
+            Assert.AreEqual(HandFrustumMonitor.HandFrustumState.OutOfFrustum, wristState);
+
+            // Palm at center of view (y = 0.45f)
+            Vector3 palmViewport = new Vector3(0.5f, 0.45f, 1.0f);
+            var palmState = HandFrustumMonitor.EvaluateViewportPosition(palmViewport, DefaultThreshold);
+            Assert.AreEqual(HandFrustumMonitor.HandFrustumState.Inside, palmState);
+        }
     }
 }

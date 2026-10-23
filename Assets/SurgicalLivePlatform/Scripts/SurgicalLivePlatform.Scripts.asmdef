@@ -1,0 +1,21 @@
+{
+    "name": "SurgicalLivePlatform.Scripts",
+    "rootNamespace": "SurgicalLivePlatform",
+    "references": [
+        "Unity.XR.Hands",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI",
+        "Unity.XR.Interaction.Toolkit",
+        "Unity.InputSystem",
+        "Unity.XR.XREAL"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
