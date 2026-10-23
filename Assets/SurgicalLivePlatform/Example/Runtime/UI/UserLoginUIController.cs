@@ -30,6 +30,11 @@ namespace SurgicalLivePlatform.Example.Runtime.UI
         public GameObject patternLockPanel;
 
         private string _password = string.Empty;
+        private string _cachedAccount = string.Empty;
+        private string _cachedPassword = string.Empty;
+
+        public string CachedAccount => _cachedAccount;
+        public string CachedPassword => _cachedPassword;
 
         public string password
         {
@@ -37,6 +42,7 @@ namespace SurgicalLivePlatform.Example.Runtime.UI
             set
             {
                 _password = value;
+                _cachedPassword = value;
                 if (passwordInput != null)
                 {
                     passwordInput.text = value;
@@ -103,6 +109,7 @@ namespace SurgicalLivePlatform.Example.Runtime.UI
         {
             InitializeUI();
             ShowLoginPanel();
+            SetLoading(false); // 确保从大厅返回时恢复登录按钮 interactable = true，点击登录按钮仍然可以进行登录
         }
 
         protected override void OnHide()
@@ -134,8 +141,18 @@ namespace SurgicalLivePlatform.Example.Runtime.UI
 
         public void SetCredentials(string account, string password)
         {
+            _cachedAccount = account;
+            _cachedPassword = password;
             if (accountInput != null) accountInput.text = account;
             if (passwordInput != null) passwordInput.text = password;
+        }
+
+        public void ClearCredentials()
+        {
+            _cachedAccount = string.Empty;
+            _cachedPassword = string.Empty;
+            if (accountInput != null) accountInput.text = string.Empty;
+            if (passwordInput != null) passwordInput.text = string.Empty;
         }
 
         public void ShowErrorMessage(string message)
@@ -230,7 +247,8 @@ namespace SurgicalLivePlatform.Example.Runtime.UI
         }
 
         /// <summary>
-        /// 初始化默认值与显示模式
+        /// 初始化默认值与显示模式。
+        /// 遵循保留上次账号密码原则：若输入框或缓存已有内容，则予以保留，仅在首次为空时注入配置默认账密。
         /// </summary>
         public void InitializeUI()
         {
@@ -238,15 +256,29 @@ namespace SurgicalLivePlatform.Example.Runtime.UI
 
             if (accountInput != null)
             {
-                accountInput.text = defaultAccount;
+                if (string.IsNullOrEmpty(accountInput.text))
+                {
+                    accountInput.text = !string.IsNullOrEmpty(_cachedAccount) ? _cachedAccount : defaultAccount;
+                }
+                else
+                {
+                    _cachedAccount = accountInput.text;
+                }
             }
 
             if (passwordInput != null)
             {
-                passwordInput.text = defaultPassword;
+                if (string.IsNullOrEmpty(passwordInput.text))
+                {
+                    passwordInput.text = !string.IsNullOrEmpty(_cachedPassword) ? _cachedPassword : defaultPassword;
+                }
+                else
+                {
+                    _cachedPassword = passwordInput.text;
+                }
 
                 // 仅当在开发/测试模式且有预置测试账密时默认明文展示，生产环境留空并使用 Password 掩码
-                bool isDevWithCredentials = AuthConfig.IsDevelopmentEnvironment && !string.IsNullOrEmpty(defaultPassword);
+                bool isDevWithCredentials = AuthConfig.IsDevelopmentEnvironment && !string.IsNullOrEmpty(passwordInput.text);
                 passwordInput.contentType = isDevWithCredentials
                     ? TMP_InputField.ContentType.Standard
                     : TMP_InputField.ContentType.Password;
@@ -273,6 +305,16 @@ namespace SurgicalLivePlatform.Example.Runtime.UI
             if (showPasswordToggle != null)
             {
                 showPasswordToggle.onValueChanged.AddListener(OnShowPasswordToggled);
+            }
+
+            if (accountInput != null)
+            {
+                accountInput.onValueChanged.AddListener(OnAccountInputChanged);
+            }
+
+            if (passwordInput != null)
+            {
+                passwordInput.onValueChanged.AddListener(OnPasswordInputChanged);
             }
 
             if (loginButton != null)
@@ -308,6 +350,16 @@ namespace SurgicalLivePlatform.Example.Runtime.UI
                 showPasswordToggle.onValueChanged.RemoveListener(OnShowPasswordToggled);
             }
 
+            if (accountInput != null)
+            {
+                accountInput.onValueChanged.RemoveListener(OnAccountInputChanged);
+            }
+
+            if (passwordInput != null)
+            {
+                passwordInput.onValueChanged.RemoveListener(OnPasswordInputChanged);
+            }
+
             if (loginButton != null)
             {
                 loginButton.onClick.RemoveListener(OnLoginButtonClicked);
@@ -327,6 +379,16 @@ namespace SurgicalLivePlatform.Example.Runtime.UI
             EventManager.RemoveListener(EventId.OnExitButtonClicked, HandleExitEvent);
 
             _isEventsBound = false;
+        }
+
+        private void OnAccountInputChanged(string value)
+        {
+            _cachedAccount = value;
+        }
+
+        private void OnPasswordInputChanged(string value)
+        {
+            _cachedPassword = value;
         }
 
         public void OnShowPasswordToggled(bool isOn)
@@ -357,6 +419,9 @@ namespace SurgicalLivePlatform.Example.Runtime.UI
 
             string account = accountInput != null && accountInput.text != null ? accountInput.text.Trim() : string.Empty;
             string password = passwordInput != null && passwordInput.text != null ? passwordInput.text.Trim() : string.Empty;
+
+            _cachedAccount = account;
+            _cachedPassword = password;
 
             OnLoginRequested?.Invoke(account, password);
         }

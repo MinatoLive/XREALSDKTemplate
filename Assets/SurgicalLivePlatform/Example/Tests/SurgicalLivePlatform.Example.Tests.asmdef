@@ -3,7 +3,8 @@
     "rootNamespace": "SurgicalLivePlatform.Example.Tests",
     "references": [
         "SurgicalLivePlatform.Runtime",
-        "SurgicalLivePlatform.Example.Runtime"
+        "SurgicalLivePlatform.Example.Runtime",
+        "Unity.TextMeshPro"
     ],
     "optionalUnityReferences": [
         "TestAssemblies"

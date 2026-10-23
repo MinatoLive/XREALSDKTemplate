@@ -79,6 +79,36 @@ namespace SurgicalLivePlatform.Runtime.Config
             set => s_staticAssetBaseUrlOverride = value;
         }
 
+        /// <summary>
+        /// 房间信令 WebSocket 服务端点。
+        /// <para>基于 <see cref="ApiBaseUrl"/> 自动推导：https 映射为 wss，http 映射为 ws，并挂载 /ws 路径。</para>
+        /// </summary>
+        public static string WebSocketUrl
+        {
+            get
+            {
+                string apiBase = ApiBaseUrl.TrimEnd('/');
+                if (apiBase.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                {
+                    return "wss://" + apiBase.Substring("https://".Length) + "/ws";
+                }
+                if (apiBase.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
+                {
+                    return "ws://" + apiBase.Substring("http://".Length) + "/ws";
+                }
+                return apiBase + "/ws";
+            }
+        }
+
+        /// <summary>
+        /// 生成指定房间的信令 WebSocket 地址。
+        /// </summary>
+        public static string GetRoomWebSocketUrl(string roomId)
+        {
+            if (string.IsNullOrEmpty(roomId)) return WebSocketUrl;
+            return $"{WebSocketUrl}?roomId={Uri.EscapeDataString(roomId)}";
+        }
+
         #endregion
 
         #region 运行环境与安全策略 (Environment & Security Policy)
